@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Search,
   Sun,
@@ -14,6 +14,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { exportWorkspaceJSON } from '../../utils/storage';
 import { useToast } from '../../context/ToastContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { DataSyncProgressModal } from '../common/DataSyncProgressModal';
 
 export const Header = ({ onOpenSearch, onNewProject }) => {
   const { theme, toggleTheme } = useTheme();
@@ -21,9 +22,15 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
   const { toastSuccess, toastInfo } = useToast();
   const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
 
-  const handleExportBackup = () => {
+  const handleStartExport = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const handleFinishExport = () => {
     const stats = exportWorkspaceJSON({
       projects,
       tasks,
@@ -31,6 +38,7 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
     });
     const subInfo = stats.subProjectsCount > 0 ? ` (incl. ${stats.subProjectsCount} sub-projects)` : '';
     toastSuccess(`devOrbit backup downloaded: ${stats.projectsCount} projects${subInfo}, ${stats.tasksCount} tasks, ${stats.notesCount} docs`);
+    setTimeout(() => setIsExportModalOpen(false), 800);
   };
 
   const handleInstallApp = async () => {
@@ -210,7 +218,7 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
         </button>
 
         <button
-          onClick={handleExportBackup}
+          onClick={handleStartExport}
           className="btn-icon"
           title="Export JSON Backup"
         >
@@ -226,6 +234,13 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
       </div>
+
+      {/* Animated Export Modal */}
+      <DataSyncProgressModal
+        isOpen={isExportModalOpen}
+        mode="export"
+        onComplete={handleFinishExport}
+      />
     </header>
   );
 };

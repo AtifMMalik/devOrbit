@@ -16,16 +16,20 @@ import { useToast } from '../context/ToastContext';
 import { exportWorkspaceJSON } from '../utils/storage';
 import { Button } from '../components/common/Button';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { DataSyncProgressModal } from '../components/common/DataSyncProgressModal';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
   const { theme, setTheme } = useTheme();
   const { toastSuccess, toastError, toastInfo } = useToast();
-  const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
+  const { isInstallable, isInstalled, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
   const fileInputRef = useRef(null);
 
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncMode, setSyncMode] = useState('export'); // 'export' | 'import'
+  const [pendingImportData, setPendingImportData] = useState(null);
 
   // Compute workspace counts
   const stats = useMemo(() => {
@@ -52,7 +56,12 @@ export const SettingsPage = () => {
     };
   }, [projects, tasks, notes]);
 
-  const handleExportJSON = () => {
+  const handleStartExportJSON = () => {
+    setSyncMode('export');
+    setIsSyncModalOpen(true);
+  };
+
+  const handleFinishExport = () => {
     const exportedStats = exportWorkspaceJSON({
       projects,
       tasks,
@@ -62,9 +71,10 @@ export const SettingsPage = () => {
     toastSuccess(
       `devOrbit backup downloaded: ${exportedStats.projectsCount} projects${subInfo}, ${exportedStats.tasksCount} tasks, ${exportedStats.notesCount} docs`
     );
+    setTimeout(() => setIsSyncModalOpen(false), 800);
   };
 
-  const handleImportJSON = (e) => {
+  const handleStartImportJSON = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -78,17 +88,9 @@ export const SettingsPage = () => {
         }
 
         const parsed = JSON.parse(text);
-        const res = restoreWorkspaceData(parsed);
-
-        if (res && res.success) {
-          const { count } = res;
-          const subInfo = count.subProjects > 0 ? ` (${count.rootProjects} root, ${count.subProjects} sub-projects)` : '';
-          toastSuccess(
-            `Workspace restored: ${count.projects} projects${subInfo}, ${count.tasks} tasks, ${count.notes} docs!`
-          );
-        } else {
-          toastError(res?.error || 'Invalid workspace backup format');
-        }
+        setPendingImportData(parsed);
+        setSyncMode('import');
+        setIsSyncModalOpen(true);
       } catch (err) {
         console.error('JSON parse error on import:', err);
         toastError('Failed to parse JSON file — invalid syntax');
@@ -98,13 +100,25 @@ export const SettingsPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleFinishImport = () => {
+    if (pendingImportData) {
+      const res = restoreWorkspaceData(pendingImportData);
+      if (res && res.success) {
+        const { count } = res;
+        const subInfo = count.subProjects > 0 ? ` (${count.rootProjects} root, ${count.subProjects} sub-projects)` : '';
+        toastSuccess(
+          `Workspace restored: ${count.projects} projects${subInfo}, ${count.tasks} tasks, ${count.notes} docs!`
+        );
+      } else {
+        toastError(res?.error || 'Invalid workspace backup format');
+      }
+      setPendingImportData(null);
+    }
+    setTimeout(() => setIsSyncModalOpen(false), 800);
+  };
+
   const handleClearWorkspace = () => {
-    restoreWorkspaceData({
-      version: '1.0.0',
-      projects: [],
-      tasks: [],
-      notes: [],
-    });
+    resetWorkspace();
     toastSuccess('All workspace data cleared');
   };
 
@@ -289,7 +303,7 @@ export const SettingsPage = () => {
           <Button
             variant="primary"
             icon={Download}
-            onClick={handleExportJSON}
+            onClick={handleStartExportJSON}
           >
             Export JSON Backup
           </Button>
@@ -299,7 +313,7 @@ export const SettingsPage = () => {
               ref={fileInputRef}
               type="file"
               accept=".json"
-              onChange={handleImportJSON}
+              onChange={handleStartImportJSON}
               style={{ display: 'none' }}
             />
             <Button
@@ -350,6 +364,13 @@ export const SettingsPage = () => {
         message="This will wipe all projects, sub-projects, tasks, and notes permanently. Are you sure?"
         confirmText="Wipe Everything"
         confirmVariant="danger"
+      />
+
+      {/* Data Sync Animated Loading Modal */}
+      <DataSyncProgressModal
+        isOpen={isSyncModalOpen}
+        mode={syncMode}
+        onComplete={syncMode === 'export' ? handleFinishExport : handleFinishImport}
       />
     </div>
   );

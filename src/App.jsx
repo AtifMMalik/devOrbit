@@ -8,6 +8,8 @@ import { DashboardOverviewPage } from './pages/DashboardOverviewPage';
 import { ProjectOverviewPage } from './pages/ProjectOverviewPage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
 import { ProjectNotesPage } from './pages/ProjectNotesPage';
+import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage';
+import { AnalyticsProfilePage } from './pages/AnalyticsProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
@@ -19,9 +21,11 @@ export default function App() {
             <Routes>
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<DashboardOverviewPage />} />
+                <Route path="analytics" element={<AnalyticsProfilePage />} />
                 <Route path="project/:projectId/overview" element={<ProjectOverviewPage />} />
                 <Route path="project/:projectId/tasks" element={<ProjectTasksPage />} />
                 <Route path="project/:projectId/notes" element={<ProjectNotesPage />} />
+                <Route path="project/:projectId/analytics" element={<ProjectAnalyticsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

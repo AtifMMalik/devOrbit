@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
   Plus,
-  Layers,
-  CheckCircle2,
-  Clock,
-  Circle,
   FolderPlus,
+  TrendingUp,
+  ArrowRight,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProjectStats } from '../hooks/useProjectStats';
@@ -14,10 +12,12 @@ import { ProjectCard } from '../components/projects/ProjectCard';
 import { Button } from '../components/common/Button';
 import { StatusBadge, PriorityBadge, TagBadge } from '../components/common/Badge';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
+import { generateActivityData } from '../utils/activityGenerator';
 
 export const DashboardOverviewPage = () => {
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
-  const { projects, tasks, getRootProjects, deleteProject } = useWorkspace();
+  const { projects, tasks, notes, getRootProjects, deleteProject } = useWorkspace();
   const stats = useProjectStats(tasks);
   const rootProjects = getRootProjects();
   const navigate = useNavigate();
@@ -32,6 +32,10 @@ export const DashboardOverviewPage = () => {
       setDeletingProjectId(null);
     }
   };
+
+  const calendarData = useMemo(() => {
+    return generateActivityData(tasks, projects, notes, null, 365);
+  }, [tasks, projects, notes]);
 
   const recentActiveTasks = tasks
     .filter((t) => t.status === 'current' || t.status === 'later')
@@ -56,11 +60,20 @@ export const DashboardOverviewPage = () => {
             Projects Overview
           </h1>
           <p style={{ marginTop: '2px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-            Manage projects, nested sub-modules, and active task workflows.
+            Manage projects, nested sub-modules, active task workflows, and developer velocity.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={TrendingUp}
+            onClick={() => navigate('/analytics')}
+            title="View Developer Profile & Velocity Charts"
+          >
+            Work Analytics
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -124,6 +137,14 @@ export const DashboardOverviewPage = () => {
           </div>
         </div>
       </div>
+
+      {/* GitHub-style Contribution Heatmap */}
+      <ActivityHeatmap
+        data={calendarData}
+        title="Developer Activity & Momentum"
+        subtitle="365-day GitHub-style contribution record of workspace activities"
+        showStats
+      />
 
       {/* Projects Grid */}
       <div>

@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Layers,
+  TrendingUp,
 } from 'lucide-react';
 import { ProjectBreadcrumbs } from './ProjectBreadcrumbs';
 import { Button } from '../common/Button';
@@ -174,6 +175,25 @@ export const ProjectHeader = ({
         >
           <BookOpen size={13} />
           <span>Docs & Notes</span>
+        </NavLink>
+
+        <NavLink
+          to={`/project/${project.id}/analytics`}
+          style={({ isActive }) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: 'var(--space-2) 0',
+            fontSize: 'var(--text-xs)',
+            fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+            color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+            borderBottom: isActive ? '2px solid var(--color-primary)' : '2px solid transparent',
+            marginBottom: '-1px',
+            textDecoration: 'none',
+          })}
+        >
+          <TrendingUp size={13} />
+          <span>Analytics & Progress</span>
         </NavLink>
       </div>
     </div>

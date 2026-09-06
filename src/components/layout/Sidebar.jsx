@@ -8,7 +8,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Orbit,
+  TrendingUp,
 } from 'lucide-react';
 import { ProjectTree } from './ProjectTree';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -96,8 +96,8 @@ export const Sidebar = ({
           gap: 'var(--space-4)',
         }}
       >
-        {/* Workspace Overview Link */}
-        <div>
+        {/* Top Navigation Links */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <NavLink
             to="/"
             onClick={() => setActiveProjectId(null)}
@@ -119,6 +119,29 @@ export const Sidebar = ({
           >
             <LayoutDashboard size={15} />
             {!collapsed && <span>Projects Overview</span>}
+          </NavLink>
+
+          <NavLink
+            to="/analytics"
+            onClick={() => setActiveProjectId(null)}
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              gap: 'var(--space-2)',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-sm)',
+              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+              fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+              fontSize: 'var(--text-xs)',
+              textDecoration: 'none',
+              transition: 'background-color var(--transition-fast)',
+            })}
+            title="Work Analytics & Profile"
+          >
+            <TrendingUp size={15} />
+            {!collapsed && <span>Work Analytics</span>}
           </NavLink>
         </div>
 
@@ -234,6 +257,25 @@ export const Sidebar = ({
               >
                 <CheckSquare size={14} />
                 <span>Tasks & Issues</span>
+              </NavLink>
+
+              <NavLink
+                to={`/project/${activeProject.id}/analytics`}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)',
+                  padding: '6px 8px',
+                  borderRadius: 'var(--radius-sm)',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                  fontSize: 'var(--text-xs)',
+                  textDecoration: 'none',
+                })}
+              >
+                <TrendingUp size={14} />
+                <span>Analytics</span>
               </NavLink>
 
               <NavLink

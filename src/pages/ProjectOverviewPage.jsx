@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Layers,
@@ -7,6 +7,7 @@ import {
   BookOpen,
   FileCode,
   ArrowRight,
+  TrendingUp,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProjectStats } from '../hooks/useProjectStats';
@@ -16,12 +17,14 @@ import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
 import { TagBadge, PriorityBadge } from '../components/common/Badge';
+import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
+import { generateActivityData } from '../utils/activityGenerator';
 
 export const ProjectOverviewPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
-  const { getProject, getSubProjects, getProjectTasks, deleteProject } = useWorkspace();
+  const { getProject, getSubProjects, getProjectTasks, deleteProject, tasks, projects, notes } = useWorkspace();
 
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -33,6 +36,10 @@ export const ProjectOverviewPage = () => {
   const stats = useProjectStats(rollupTasks);
 
   const deletingSubproject = subProjects.find((p) => p.id === deletingSubprojectId);
+
+  const calendarData = useMemo(() => {
+    return projectId ? generateActivityData(tasks, projects, notes, projectId, 365) : [];
+  }, [tasks, projects, notes, projectId]);
 
   if (!project) {
     return (
@@ -251,6 +258,29 @@ export const ProjectOverviewPage = () => {
               </div>
               <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
             </div>
+
+            <div
+              onClick={() => navigate(`/project/${project.id}/analytics`)}
+              className="card-hoverable"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: 'var(--space-2-5) var(--space-3)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-surface)',
+                cursor: 'pointer',
+                border: '1px solid var(--border-default)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <TrendingUp size={15} style={{ color: 'var(--color-primary)' }} />
+                <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--text-xs)', color: 'var(--text-primary)' }}>
+                  Progress Charts & Velocity
+                </span>
+              </div>
+              <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
+            </div>
           </div>
 
           {/* Tags & Categories */}
@@ -302,6 +332,14 @@ export const ProjectOverviewPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Project GitHub Activity Contribution Heatmap */}
+        <ActivityHeatmap
+          data={calendarData}
+          title="Project Velocity & Contributions"
+          subtitle="GitHub-style contribution history for this project's tasks, checklists, and notes"
+          showStats
+        />
       </div>
 
       {/* Markdown Sync Modal */}
