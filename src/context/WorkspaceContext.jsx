@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { loadWorkspaceData, saveWorkspaceData, resetWorkspaceData } from '../utils/storage';
+import { loadWorkspaceData, saveWorkspaceData, resetWorkspaceData, sanitizeWorkspaceData } from '../utils/storage';
 import { generateId } from '../utils/idGenerator';
 
 const WorkspaceContext = createContext();
@@ -42,6 +42,8 @@ export const WorkspaceProvider = ({ children }) => {
       color: projectData.color || '#0084ff',
       icon: projectData.icon || 'Folder',
       tags: projectData.tags || [],
+      todos: Array.isArray(projectData.todos) ? projectData.todos : [],
+      testing: Array.isArray(projectData.testing) ? projectData.testing : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -455,16 +457,51 @@ export const WorkspaceProvider = ({ children }) => {
   // =========================================================================
 
   const restoreWorkspaceData = useCallback((importedData) => {
-    if (importedData && Array.isArray(importedData.projects) && Array.isArray(importedData.tasks)) {
-      setData({
-        version: importedData.version || '1.0.0',
-        projects: importedData.projects,
-        tasks: importedData.tasks,
-        notes: Array.isArray(importedData.notes) ? importedData.notes : [],
+    try {
+      if (!importedData || typeof importedData !== 'object') {
+        return { success: false, error: 'Invalid backup format' };
+      }
+
+      const hasProjects = Array.isArray(importedData) || Array.isArray(importedData.projects);
+      const hasTasks = Array.isArray(importedData.tasks);
+      const hasNotes = Array.isArray(importedData.notes);
+
+      if (!hasProjects && !hasTasks && !hasNotes) {
+        return { success: false, error: 'No projects or tasks found in backup file' };
+      }
+
+      const clean = sanitizeWorkspaceData(importedData);
+      setData(clean);
+
+      // If activeProjectId is not in restored projects, reset it
+      setActiveProjectId((prevActive) => {
+        if (prevActive && clean.projects.some((p) => p.id === prevActive)) {
+          return prevActive;
+        }
+        return clean.projects[0]?.id || null;
       });
-      return true;
+
+      const rootProjects = clean.projects.filter((p) => !p.parentId).length;
+      const subProjects = clean.projects.filter((p) => Boolean(p.parentId)).length;
+      const totalTodos = clean.projects.reduce((acc, p) => acc + (p.todos?.length || 0), 0);
+      const totalTesting = clean.projects.reduce((acc, p) => acc + (p.testing?.length || 0), 0);
+
+      return {
+        success: true,
+        count: {
+          projects: clean.projects.length,
+          rootProjects,
+          subProjects,
+          tasks: clean.tasks.length,
+          notes: clean.notes.length,
+          todos: totalTodos,
+          testing: totalTesting,
+        },
+      };
+    } catch (err) {
+      console.error('Failed to restore workspace data:', err);
+      return { success: false, error: err.message || 'Restoration failed' };
     }
-    return false;
   }, []);
 
   const resetWorkspace = useCallback(() => {

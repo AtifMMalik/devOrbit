@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
   Download,
   Upload,
@@ -6,10 +6,6 @@ import {
   Database,
   Moon,
   Sun,
-  Shield,
-  CheckCircle2,
-  Sparkles,
-  Layers,
   Laptop,
   Check,
   RotateCw,
@@ -31,14 +27,41 @@ export const SettingsPage = () => {
 
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
+  // Compute workspace counts
+  const stats = useMemo(() => {
+    const rootCount = projects.filter((p) => !p.parentId).length;
+    const subCount = projects.filter((p) => Boolean(p.parentId)).length;
+    const currentTasks = tasks.filter((t) => t.status === 'current').length;
+    const laterTasks = tasks.filter((t) => t.status === 'later').length;
+    const doneTasks = tasks.filter((t) => t.status === 'done').length;
+    const totalTodos = projects.reduce((acc, p) => acc + (p.todos?.length || 0), 0);
+    const totalTesting = projects.reduce((acc, p) => acc + (p.testing?.length || 0), 0);
+
+    return {
+      totalProjects: projects.length,
+      rootCount,
+      subCount,
+      totalTasks: tasks.length,
+      currentTasks,
+      laterTasks,
+      doneTasks,
+      totalNotes: notes.length,
+      totalChecklists: totalTodos + totalTesting,
+      totalTodos,
+      totalTesting,
+    };
+  }, [projects, tasks, notes]);
+
   const handleExportJSON = () => {
-    exportWorkspaceJSON({
-      version: '1.0.0',
+    const exportedStats = exportWorkspaceJSON({
       projects,
       tasks,
       notes,
     });
-    toastSuccess('devOrbit backup file downloaded');
+    const subInfo = exportedStats.subProjectsCount > 0 ? ` (incl. ${exportedStats.subProjectsCount} sub-projects)` : '';
+    toastSuccess(
+      `devOrbit backup downloaded: ${exportedStats.projectsCount} projects${subInfo}, ${exportedStats.tasksCount} tasks, ${exportedStats.notesCount} docs`
+    );
   };
 
   const handleImportJSON = (e) => {
@@ -48,14 +71,27 @@ export const SettingsPage = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result);
-        if (restoreWorkspaceData(parsed)) {
-          toastSuccess('Workspace successfully restored!');
+        const text = event.target?.result;
+        if (!text || typeof text !== 'string') {
+          toastError('Backup file is empty or corrupted');
+          return;
+        }
+
+        const parsed = JSON.parse(text);
+        const res = restoreWorkspaceData(parsed);
+
+        if (res && res.success) {
+          const { count } = res;
+          const subInfo = count.subProjects > 0 ? ` (${count.rootProjects} root, ${count.subProjects} sub-projects)` : '';
+          toastSuccess(
+            `Workspace restored: ${count.projects} projects${subInfo}, ${count.tasks} tasks, ${count.notes} docs!`
+          );
         } else {
-          toastError('Invalid workspace backup format');
+          toastError(res?.error || 'Invalid workspace backup format');
         }
       } catch (err) {
-        toastError('Failed to parse JSON file');
+        console.error('JSON parse error on import:', err);
+        toastError('Failed to parse JSON file — invalid syntax');
       }
     };
     reader.readAsText(file);
@@ -85,26 +121,37 @@ export const SettingsPage = () => {
       <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', textAlign: 'center' }}>
         <div>
           <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-            {projects.length}
+            {stats.totalProjects}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-            Saved Projects & Sub-projects
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
+            Projects & Sub-projects
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
+            {stats.rootCount} root • {stats.subCount} sub-projects
           </div>
         </div>
+
         <div>
           <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--status-current-text)' }}>
-            {tasks.length}
+            {stats.totalTasks}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-            Active & Archived Tasks
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
+            Total Tasks
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
+            {stats.currentTasks} current • {stats.laterTasks} later • {stats.doneTasks} done
           </div>
         </div>
+
         <div>
           <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--status-done-text)' }}>
-            {notes.length}
+            {stats.totalNotes}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-            Documentation Documents
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
+            Documentation Notes
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
+            {stats.totalTodos} to-dos • {stats.totalTesting} test cases
           </div>
         </div>
       </div>
@@ -235,7 +282,7 @@ export const SettingsPage = () => {
           <span>Local Storage & Backup Management</span>
         </h3>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          All workspace data is saved securely in your browser's LocalStorage. You can export a full JSON backup to transfer data to other devices or restore an earlier state anytime.
+          All workspace data is saved securely in your browser's LocalStorage. You can export a full JSON backup to transfer all projects, sub-projects, tasks (current, later, done), checklists (todos, testing), and notes to other devices or restore an earlier state anytime.
         </p>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
@@ -280,7 +327,7 @@ export const SettingsPage = () => {
           Reset Workspace Data
         </h3>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          Wipe all stored projects, sub-projects, tasks, and documentation notes permanently.
+          Wipe all stored projects, sub-projects, tasks, checklists, and documentation notes permanently.
         </p>
 
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>

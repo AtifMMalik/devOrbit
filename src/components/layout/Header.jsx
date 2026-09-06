@@ -3,11 +3,9 @@ import {
   Search,
   Sun,
   Moon,
-  Plus,
   Download,
   FolderPlus,
   Laptop,
-  Check,
   RotateCw,
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -26,13 +24,13 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
 
   const handleExportBackup = () => {
-    exportWorkspaceJSON({
-      version: '1.0.0',
+    const stats = exportWorkspaceJSON({
       projects,
       tasks,
       notes,
     });
-    toastSuccess('Workspace backup downloaded');
+    const subInfo = stats.subProjectsCount > 0 ? ` (incl. ${stats.subProjectsCount} sub-projects)` : '';
+    toastSuccess(`devOrbit backup downloaded: ${stats.projectsCount} projects${subInfo}, ${stats.tasksCount} tasks, ${stats.notesCount} docs`);
   };
 
   const handleInstallApp = async () => {
