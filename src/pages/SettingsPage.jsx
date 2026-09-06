@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import {
   Download,
   Upload,
-  RefreshCw,
   Trash2,
   Database,
   Moon,
@@ -29,7 +28,6 @@ export const SettingsPage = () => {
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
   const fileInputRef = useRef(null);
 
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
   const handleExportJSON = () => {
@@ -61,11 +59,6 @@ export const SettingsPage = () => {
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleResetToSample = () => {
-    resetWorkspace();
-    toastSuccess('Reset to preloaded sample developer data');
   };
 
   const handleClearWorkspace = () => {
@@ -272,21 +265,13 @@ export const SettingsPage = () => {
         }}
       >
         <h3 style={{ fontSize: 'var(--text-base)', color: 'var(--status-blocked-text)' }}>
-          Reset & Demo Data
+          Reset Workspace Data
         </h3>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          Quickly restore the rich sample developer projects or wipe all stored entities.
+          Wipe all stored projects, sub-projects, tasks, and documentation notes permanently.
         </p>
 
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <Button
-            variant="secondary"
-            icon={RefreshCw}
-            onClick={() => setIsResetConfirmOpen(true)}
-          >
-            Reset to Sample Data
-          </Button>
-
           <Button
             variant="danger"
             icon={Trash2}
@@ -298,16 +283,6 @@ export const SettingsPage = () => {
       </div>
 
       {/* Confirmation Dialogs */}
-      <ConfirmDialog
-        isOpen={isResetConfirmOpen}
-        onClose={() => setIsResetConfirmOpen(false)}
-        onConfirm={handleResetToSample}
-        title="Reset to Sample Data"
-        message="This will replace current workspace projects and tasks with the preloaded sample developer datasets. Are you sure?"
-        confirmText="Reset Now"
-        confirmVariant="primary"
-      />
-
       <ConfirmDialog
         isOpen={isClearConfirmOpen}
         onClose={() => setIsClearConfirmOpen(false)}

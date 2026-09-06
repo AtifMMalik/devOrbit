@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { loadWorkspaceData, saveWorkspaceData, resetToSampleData } from '../utils/storage';
+import { loadWorkspaceData, saveWorkspaceData, resetWorkspaceData } from '../utils/storage';
 import { generateId } from '../utils/idGenerator';
 
 const WorkspaceContext = createContext();
@@ -468,7 +468,7 @@ export const WorkspaceProvider = ({ children }) => {
   }, []);
 
   const resetWorkspace = useCallback(() => {
-    const defaultData = resetToSampleData();
+    const defaultData = resetWorkspaceData();
     setData(defaultData);
     setActiveProjectId(null);
   }, []);

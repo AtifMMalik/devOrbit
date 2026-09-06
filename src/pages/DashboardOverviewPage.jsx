@@ -133,23 +133,70 @@ export const DashboardOverviewPage = () => {
           </span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: 'var(--space-3)',
-          }}
-        >
-          {rootProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onEdit={onOpenEditProject}
-              onDelete={(id) => setDeletingProjectId(id)}
-              onAddSubproject={(parentId) => onOpenNewProject(parentId)}
-            />
-          ))}
-        </div>
+        {rootProjects.length > 0 ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 'var(--space-3)',
+            }}
+          >
+            {rootProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onEdit={onOpenEditProject}
+                onDelete={(id) => setDeletingProjectId(id)}
+                onAddSubproject={(parentId) => onOpenNewProject(parentId)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            style={{
+              padding: 'var(--space-8) var(--space-4)',
+              textAlign: 'center',
+              backgroundColor: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px dashed var(--border-default)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'rgba(0, 132, 255, 0.1)',
+                color: 'var(--color-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <FolderPlus size={22} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                No projects yet
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                Create your first project to start organizing tasks, checklists, and documentation.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={FolderPlus}
+              onClick={() => onOpenNewProject(null)}
+            >
+              Create Project
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Active Focus Tasks */}

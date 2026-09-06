@@ -1,28 +1,72 @@
-import { INITIAL_SAMPLE_DATA } from './sampleData';
-
 const STORAGE_KEY = 'devorbit_workspace_v1';
 
+export const DEFAULT_WORKSPACE_DATA = {
+  version: '1.0.0',
+  projects: [],
+  tasks: [],
+  notes: [],
+};
+
+const LEGACY_DEFAULT_PROJECT_IDS = new Set([
+  'proj_devorbit',
+  'proj_devorbit_core',
+  'proj_devorbit_storage',
+  'proj_ecommerce',
+  'proj_ecommerce_checkout',
+  'proj_mobile_app',
+]);
+
+const LEGACY_DEFAULT_PROJECT_NAMES = new Set([
+  'devorbit platform',
+  'core ui & design system',
+  'storage & sync engine',
+  'e-commerce cloud architecture',
+  'checkout & payment service',
+  'pulse mobile client',
+]);
+
 /**
- * Loads workspace data from localStorage or falls back to sample data.
+ * Loads workspace data from localStorage or falls back to empty workspace.
  */
 export const loadWorkspaceData = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      saveWorkspaceData(INITIAL_SAMPLE_DATA);
-      return INITIAL_SAMPLE_DATA;
+      saveWorkspaceData(DEFAULT_WORKSPACE_DATA);
+      return DEFAULT_WORKSPACE_DATA;
     }
     const parsed = JSON.parse(raw);
-    // Ensure all expected arrays exist
-    return {
+
+    const rawProjects = Array.isArray(parsed.projects) ? parsed.projects : [];
+    // Remove any default sample projects
+    const purgedProjects = rawProjects.filter(
+      (p) => !LEGACY_DEFAULT_PROJECT_IDS.has(p.id) && !LEGACY_DEFAULT_PROJECT_NAMES.has((p.name || '').toLowerCase().trim())
+    );
+
+    const validProjectIds = new Set(purgedProjects.map((p) => p.id));
+
+    const rawTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    const purgedTasks = rawTasks.filter(
+      (t) => validProjectIds.has(t.projectId) && !LEGACY_DEFAULT_PROJECT_IDS.has(t.projectId)
+    );
+
+    const rawNotes = Array.isArray(parsed.notes) ? parsed.notes : [];
+    const purgedNotes = rawNotes.filter(
+      (n) => validProjectIds.has(n.projectId) && !LEGACY_DEFAULT_PROJECT_IDS.has(n.projectId)
+    );
+
+    const cleanData = {
       version: parsed.version || '1.0.0',
-      projects: Array.isArray(parsed.projects) ? parsed.projects : INITIAL_SAMPLE_DATA.projects,
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_SAMPLE_DATA.tasks,
-      notes: Array.isArray(parsed.notes) ? parsed.notes : INITIAL_SAMPLE_DATA.notes,
+      projects: purgedProjects,
+      tasks: purgedTasks,
+      notes: purgedNotes,
     };
+
+    saveWorkspaceData(cleanData);
+    return cleanData;
   } catch (error) {
     console.error('Failed to load devOrbit workspace from localStorage:', error);
-    return INITIAL_SAMPLE_DATA;
+    return DEFAULT_WORKSPACE_DATA;
   }
 };
 
@@ -56,9 +100,9 @@ export const exportWorkspaceJSON = (data) => {
 };
 
 /**
- * Resets workspace to the initial rich developer demo data.
+ * Resets workspace to clean empty data.
  */
-export const resetToSampleData = () => {
-  saveWorkspaceData(INITIAL_SAMPLE_DATA);
-  return INITIAL_SAMPLE_DATA;
+export const resetWorkspaceData = () => {
+  saveWorkspaceData(DEFAULT_WORKSPACE_DATA);
+  return DEFAULT_WORKSPACE_DATA;
 };
