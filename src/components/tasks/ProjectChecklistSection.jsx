@@ -20,9 +20,10 @@ export const ProjectChecklistSection = ({
   onUpdate,
   onDelete,
   placeholder = 'Add new item...',
+  defaultCollapsed = true,
 }) => {
   const [inputText, setInputText] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   const completedCount = items.filter((item) => item.completed).length;
   const totalCount = items.length;
