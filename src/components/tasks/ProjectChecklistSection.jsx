@@ -42,7 +42,7 @@ export const ProjectChecklistSection = ({
 
   return (
     <details
-      className="card checklist-section-details"
+      className="checklist-section-details"
       open={isOpen}
       onToggle={(e) => setIsOpen(e.currentTarget.open)}
       style={{
