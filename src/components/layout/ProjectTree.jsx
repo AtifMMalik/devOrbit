@@ -57,7 +57,7 @@ export const ProjectTreeItem = ({
           )}
 
           <NavLink
-            to={`/project/${project.id}/overview`}
+            to={`/project/${project.id}/tasks`}
             onClick={() => setActiveProjectId(project.id)}
             style={{
               display: 'flex',

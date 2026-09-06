@@ -206,7 +206,7 @@ export const Sidebar = ({
               return (
                 <NavLink
                   key={p.id}
-                  to={`/project/${p.id}/overview`}
+                  to={`/project/${p.id}/tasks`}
                   onClick={() => setActiveProjectId(p.id)}
                   style={{
                     display: 'flex',

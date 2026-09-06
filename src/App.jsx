@@ -22,8 +22,9 @@ export default function App() {
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<DashboardOverviewPage />} />
                 <Route path="analytics" element={<AnalyticsProfilePage />} />
-                <Route path="project/:projectId/overview" element={<ProjectOverviewPage />} />
+                <Route path="project/:projectId" element={<Navigate to="tasks" replace />} />
                 <Route path="project/:projectId/tasks" element={<ProjectTasksPage />} />
+                <Route path="project/:projectId/overview" element={<ProjectOverviewPage />} />
                 <Route path="project/:projectId/notes" element={<ProjectNotesPage />} />
                 <Route path="project/:projectId/analytics" element={<ProjectAnalyticsPage />} />
                 <Route path="settings" element={<SettingsPage />} />

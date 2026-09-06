@@ -38,7 +38,7 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
         title: p.name,
         subtitle: p.description || 'Project',
         projectId: p.id,
-        route: `/project/${p.id}/overview`,
+        route: `/project/${p.id}/tasks`,
         raw: p,
       }));
 

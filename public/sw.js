@@ -44,11 +44,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+
+  // Bypass service worker entirely for local development, Vite HMR, and dependencies
+  if (
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.includes('/node_modules/') ||
+    url.pathname.startsWith('/src/') ||
+    url.search.includes('token=') ||
+    url.search.includes('t=')
+  ) {
+    return;
+  }
+
   // For navigation requests (HTML document), try network first, fallback to cached index.html
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/index.html');
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match('/index.html');
+        return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
       })
     );
     return;
@@ -67,9 +83,7 @@ self.addEventListener('fetch', (event) => {
               });
             }
           })
-          .catch(() => {
-            // Offline - noop
-          });
+          .catch(() => {});
         return cachedResponse;
       }
 
@@ -85,7 +99,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // If offline and request is an image, could return placeholder if needed
+          return new Response('', { status: 408, statusText: 'Request timed out or offline' });
         });
     })
   );

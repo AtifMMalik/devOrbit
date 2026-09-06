@@ -53,7 +53,7 @@ export const ProjectBreadcrumbs = ({ projectId }) => {
               </span>
             ) : (
               <Link
-                to={`/project/${crumb.id}/overview`}
+                to={`/project/${crumb.id}/tasks`}
                 onClick={() => setActiveProjectId(crumb.id)}
                 style={{
                   color: 'var(--text-secondary)',

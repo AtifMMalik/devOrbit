@@ -21,7 +21,7 @@ export const ProjectCard = ({
 
   const handleCardClick = () => {
     setActiveProjectId(project.id);
-    navigate(`/project/${project.id}/overview`);
+    navigate(`/project/${project.id}/tasks`);
   };
 
   return (
