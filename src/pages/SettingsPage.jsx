@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Sparkles,
   Layers,
+  Laptop,
+  Check,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
@@ -18,6 +20,7 @@ import { useToast } from '../context/ToastContext';
 import { exportWorkspaceJSON } from '../utils/storage';
 import { Button } from '../components/common/Button';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
@@ -162,6 +165,60 @@ export const SettingsPage = () => {
             <Sun size={18} />
             <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Crisp Light Mode</span>
           </button>
+        </div>
+      </div>
+
+      {/* PWA Desktop Application */}
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <h3 style={{ fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Laptop size={18} style={{ color: 'var(--color-primary)' }} />
+          <span>Desktop Application (PWA)</span>
+        </h3>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+          Install devOrbit directly onto your macOS, Windows, or Linux desktop as a standalone app with offline caching, high-speed launches, and native window framing.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
+          {isInstalled ? (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: '6px 12px',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                color: 'var(--status-done-text)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-medium)',
+              }}
+            >
+              <Check size={14} />
+              Installed & Running in Standalone Desktop Mode
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              icon={Laptop}
+              onClick={async () => {
+                if (isInstallable) {
+                  const res = await promptInstall();
+                  if (res.outcome === 'accepted') {
+                    toastSuccess('devOrbit desktop app installed!');
+                  }
+                } else {
+                  toastSuccess('You can install devOrbit via the browser URL bar or app menu');
+                }
+              }}
+            >
+              {isInstallable ? 'Install Desktop App' : 'Download Desktop App'}
+            </Button>
+          )}
+
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            Service Worker: <strong>Active & Cached</strong>
+          </span>
         </div>
       </div>
 

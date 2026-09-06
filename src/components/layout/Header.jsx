@@ -6,17 +6,21 @@ import {
   Plus,
   Download,
   FolderPlus,
+  Laptop,
+  Check,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTheme } from '../../context/ThemeContext';
 import { exportWorkspaceJSON } from '../../utils/storage';
 import { useToast } from '../../context/ToastContext';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const Header = ({ onOpenSearch, onNewProject }) => {
   const { theme, toggleTheme } = useTheme();
   const { projects, tasks, notes, activeProjectId, getProject } = useWorkspace();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastInfo } = useToast();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
 
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
 
@@ -28,6 +32,22 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
       notes,
     });
     toastSuccess('Workspace backup downloaded');
+  };
+
+  const handleInstallApp = async () => {
+    if (isInstalled) {
+      toastInfo('devOrbit is already running as a desktop app');
+      return;
+    }
+
+    if (isInstallable) {
+      const res = await promptInstall();
+      if (res.outcome === 'accepted') {
+        toastSuccess('devOrbit desktop app installed!');
+      }
+    } else {
+      toastInfo('To install devOrbit: click the install icon in your browser URL bar or Settings menu');
+    }
   };
 
   return (
@@ -107,8 +127,45 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
         )}
       </div>
 
-      {/* Right: + New Project button & Theme toggle */}
+      {/* Right: + New Project button, Install App, & Theme toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        {!isInstalled && (
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Laptop}
+            onClick={handleInstallApp}
+            title="Download / Install devOrbit as a Desktop App (PWA)"
+            style={{
+              borderColor: isInstallable ? 'var(--color-primary)' : 'var(--border-default)',
+              backgroundColor: isInstallable ? 'var(--color-primary-light)' : 'transparent',
+              color: isInstallable ? 'var(--color-primary)' : 'var(--text-secondary)',
+            }}
+          >
+            {isInstallable ? 'Install App' : 'Download App'}
+          </Button>
+        )}
+
+        {isInstalled && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: '11px',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--bg-surface-active)',
+              color: 'var(--color-primary)',
+              border: '1px solid var(--border-subtle)',
+            }}
+            title="Running as Desktop App"
+          >
+            <Laptop size={12} />
+            Desktop App
+          </span>
+        )}
+
         <Button
           variant="primary"
           size="sm"
