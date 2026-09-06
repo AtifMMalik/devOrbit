@@ -55,7 +55,7 @@ export const ProjectNotesPage = () => {
         onDeleteProject={() => setIsDeleteConfirmOpen(true)}
       />
 
-      <div style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div className="page-container" style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <MarkdownEditor
           key={project.id}
           initialTitle={currentNote.title}

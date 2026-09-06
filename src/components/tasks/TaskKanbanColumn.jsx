@@ -52,6 +52,7 @@ export const TaskKanbanColumn = ({
 
   return (
     <div
+      className="task-kanban-column"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDropOnColumn}

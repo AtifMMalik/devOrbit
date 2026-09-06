@@ -63,12 +63,12 @@ export const ProjectAnalyticsPage = () => {
       />
 
       {/* Main Analytics Content */}
-      <div style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
+      <div className="page-container" style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
         {/* Top Activity Heatmap Calendar for this Project */}
         <ActivityHeatmap
           data={calendarData}
           title={`Activity & Velocity: ${project.name}`}
-          subtitle="GitHub-style contribution history of tasks, checklist items, and documentation updates for this project"
+          subtitle="Engineering contribution history of tasks, checklist items, and documentation updates for this project"
           showStats
         />
 

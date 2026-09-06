@@ -161,25 +161,25 @@ export const calculateProductivityStats = (calendarData = []) => {
     }
   }
 
-  // Developer Rank based on contributions
-  let developerLevel = 'Orbit Apprentice';
+  // Developer Level & Engineering Rank based on contributions
+  let developerLevel = 'Associate Engineer';
   let developerRank = 1;
   let rankColor = '#38bdf8';
 
   if (totalContributions >= 50) {
-    developerLevel = 'Cosmic Architect';
+    developerLevel = 'Staff Software Engineer';
     developerRank = 5;
     rankColor = '#ec4899';
   } else if (totalContributions >= 25) {
-    developerLevel = 'Galaxy Engineer';
+    developerLevel = 'Senior Software Engineer';
     developerRank = 4;
     rankColor = '#8b5cf6';
   } else if (totalContributions >= 10) {
-    developerLevel = 'Orbit Specialist';
+    developerLevel = 'Software Engineer II';
     developerRank = 3;
     rankColor = '#10b981';
   } else if (totalContributions >= 3) {
-    developerLevel = 'Code Navigator';
+    developerLevel = 'Software Engineer I';
     developerRank = 2;
     rankColor = '#0084ff';
   }

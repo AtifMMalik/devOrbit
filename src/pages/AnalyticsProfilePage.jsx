@@ -44,7 +44,7 @@ export const AnalyticsProfilePage = () => {
   const rootProjects = getRootProjects();
 
   return (
-    <div style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
+    <div className="page-container" style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
       {/* Page Title & Filter Bar */}
       <div
         style={{
@@ -65,7 +65,7 @@ export const AnalyticsProfilePage = () => {
             </h1>
           </div>
           <p style={{ marginTop: '2px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-            Track your coding momentum, task velocity, GitHub-style contribution heatmap, and completion rates.
+            Track your coding momentum, task velocity, contribution activity calendar, and sprint completion rates.
           </p>
         </div>
 

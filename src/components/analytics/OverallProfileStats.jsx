@@ -89,27 +89,32 @@ export const OverallProfileStats = ({ projects = [], tasks = [], notes = [], cal
             </div>
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               <h2 style={{ margin: 0, fontSize: 'var(--text-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--text-primary)' }}>
-                devOrbit Developer
+                Engineering Contributor Profile
               </h2>
               <span
                 style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   padding: '2px 8px',
                   borderRadius: 'var(--radius-full)',
                   backgroundColor: `${stats.rankColor}20`,
                   color: stats.rankColor,
                   fontWeight: 'var(--font-weight-semibold)',
                   border: `1px solid ${stats.rankColor}40`,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  lineHeight: 1.2,
                 }}
               >
                 Level {stats.developerRank}
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-              {stats.developerLevel} • Workspace Velocity Engine
+              {stats.developerLevel} • Sprint Velocity & Delivery
             </p>
           </div>
         </div>

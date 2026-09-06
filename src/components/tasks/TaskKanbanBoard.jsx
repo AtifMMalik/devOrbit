@@ -22,6 +22,7 @@ export const TaskKanbanBoard = ({
 
   return (
     <div
+      className="task-kanban-board-container"
       style={{
         display: 'flex',
         gap: 'var(--space-4)',

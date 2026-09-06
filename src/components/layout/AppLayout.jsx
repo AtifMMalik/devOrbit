@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -11,7 +11,45 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 export const AppLayout = () => {
   const { isSearchOpen, setIsSearchOpen, activeProjectId } = useWorkspace();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('devorbit_sidebar_width');
+    return saved ? Math.max(180, Math.min(500, parseInt(saved, 10))) : 260;
+  });
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('devorbit_sidebar_collapsed') === 'true';
+  });
+
+  const [isMobile, setIsMobile] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  });
+
+  // Track window resize for responsive mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarCollapsed]);
+
+  const handleResizeSidebar = (newWidth) => {
+    setSidebarWidth(newWidth);
+    localStorage.setItem('devorbit_sidebar_width', String(newWidth));
+  };
+
+  const handleToggleCollapse = (force) => {
+    setSidebarCollapsed((prev) => {
+      const next = force !== undefined ? force : !prev;
+      localStorage.setItem('devorbit_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   // Modals state
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -21,7 +59,7 @@ export const AppLayout = () => {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Global Shortcuts
+  // Global Shortcuts: Cmd+K for search, Cmd+B to toggle sidebar
   useKeyboardShortcuts({
     onToggleSearch: () => setIsSearchOpen((prev) => !prev),
     onEscape: () => {
@@ -30,6 +68,18 @@ export const AppLayout = () => {
       setIsTaskModalOpen(false);
     },
   });
+
+  // Cmd/Ctrl+B shortcut for sidebar toggle
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        handleToggleCollapse();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleOpenNewProject = (parentId = null) => {
     setEditingProject(null);
@@ -49,22 +99,39 @@ export const AppLayout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative' }}>
       {/* Left Sidebar */}
       <Sidebar
+        width={sidebarWidth}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onResize={handleResizeSidebar}
+        onToggleCollapse={handleToggleCollapse}
         onAddProject={() => handleOpenNewProject(null)}
         onAddSubproject={(parentId) => handleOpenNewProject(parentId)}
         onEditProject={(p) => handleOpenEditProject(p)}
+        isMobile={isMobile}
       />
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, backgroundColor: 'var(--bg-app)' }}>
+      {/* Main Content Area with CSS Container Query */}
+      <div
+        className="app-main-content-container"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          backgroundColor: 'var(--bg-app)',
+          containerType: 'inline-size',
+          containerName: 'maincontent',
+        }}
+      >
         <Header
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => handleToggleCollapse()}
           onOpenSearch={() => setIsSearchOpen(true)}
           onNewProject={() => handleOpenNewProject(null)}
           onNewTask={handleOpenNewTask}
+          isMobile={isMobile}
         />
 
         <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

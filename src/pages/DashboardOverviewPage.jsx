@@ -42,8 +42,8 @@ export const DashboardOverviewPage = () => {
     .slice(0, 5);
 
   return (
-    <div style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
-      {/* Clean Page Header */}
+    <div className="page-container" style={{ padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
+      {/* Top Banner */}
       <div
         style={{
           display: 'flex',
@@ -51,29 +51,18 @@ export const DashboardOverviewPage = () => {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 'var(--space-3)',
-          borderBottom: '1px solid var(--border-default)',
-          paddingBottom: 'var(--space-4)',
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-semibold)' }}>
-            Projects Overview
+          <h1 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 'var(--font-weight-semibold)' }}>
+            Workspace Dashboard
           </h1>
           <p style={{ marginTop: '2px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-            Manage projects, nested sub-modules, active task workflows, and developer velocity.
+            High-level overview of projects, active task delivery, and velocity metrics.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={TrendingUp}
-            onClick={() => navigate('/analytics')}
-            title="View Developer Profile & Velocity Charts"
-          >
-            Work Analytics
-          </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Button
             variant="secondary"
             size="sm"
@@ -95,6 +84,7 @@ export const DashboardOverviewPage = () => {
 
       {/* Clean Stat Strip */}
       <div
+        className="dashboard-stats-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -138,11 +128,11 @@ export const DashboardOverviewPage = () => {
         </div>
       </div>
 
-      {/* GitHub-style Contribution Heatmap */}
+      {/* Engineering Contribution Heatmap */}
       <ActivityHeatmap
         data={calendarData}
         title="Developer Activity & Momentum"
-        subtitle="365-day GitHub-style contribution record of workspace activities"
+        subtitle="365-day engineering contribution record of workspace activities"
         showStats
       />
 

@@ -157,7 +157,7 @@ export const ProjectTasksPage = () => {
       />
 
       {/* Main Task Tool Area */}
-      <div style={{ padding: 'var(--space-4) var(--space-8)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div className="page-container" style={{ padding: 'var(--space-4) var(--space-8)', display: 'flex', flexDirection: 'column', flex: 1 }}>
         {/* Filter Controls Bar */}
         <TaskFilterBar
           searchQuery={searchQuery}

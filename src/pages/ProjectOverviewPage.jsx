@@ -77,9 +77,10 @@ export const ProjectOverviewPage = () => {
       />
 
       {/* Main Content */}
-      <div style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
+      <div className="page-container" style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
         {/* Metric Strip */}
         <div
+          className="metric-strip-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
@@ -333,11 +334,11 @@ export const ProjectOverviewPage = () => {
           </div>
         </div>
 
-        {/* Project GitHub Activity Contribution Heatmap */}
+        {/* Project Activity Contribution Heatmap */}
         <ActivityHeatmap
           data={calendarData}
           title="Project Velocity & Contributions"
-          subtitle="GitHub-style contribution history for this project's tasks, checklists, and notes"
+          subtitle="Engineering contribution history for this project's tasks, checklists, and notes"
           showStats
         />
       </div>

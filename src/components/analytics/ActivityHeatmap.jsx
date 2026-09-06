@@ -91,6 +91,8 @@ export const ActivityHeatmap = ({
               fontSize: '11px',
               fontWeight: 'var(--font-weight-semibold)',
               color: stats.rankColor,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             <Trophy size={13} />

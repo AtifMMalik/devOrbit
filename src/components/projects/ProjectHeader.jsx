@@ -27,6 +27,7 @@ export const ProjectHeader = ({
 
   return (
     <div
+      className="project-header-container"
       style={{
         padding: 'var(--space-4) var(--space-8) 0',
         borderBottom: '1px solid var(--border-default)',
@@ -46,7 +47,7 @@ export const ProjectHeader = ({
       >
         <ProjectBreadcrumbs projectId={project.id} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', flexWrap: 'wrap' }}>
           <Button
             variant="secondary"
             size="sm"
@@ -111,9 +112,12 @@ export const ProjectHeader = ({
 
       {/* Navigation Tool Tabs */}
       <div
+        className="nav-tabs-container"
         style={{
           display: 'flex',
           gap: 'var(--space-5)',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <NavLink

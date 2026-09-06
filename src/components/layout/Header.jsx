@@ -7,6 +7,8 @@ import {
   FolderPlus,
   Laptop,
   RotateCw,
+  PanelLeftOpen,
+  Menu,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -17,7 +19,13 @@ import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { DataSyncProgressModal } from '../common/DataSyncProgressModal';
 import { ProjectAvatar } from '../common/ProjectAvatar';
 
-export const Header = ({ onOpenSearch, onNewProject }) => {
+export const Header = ({
+  onOpenSearch,
+  onNewProject,
+  sidebarCollapsed = false,
+  onToggleSidebar,
+  isMobile = false,
+}) => {
   const { theme, toggleTheme } = useTheme();
   const { projects, tasks, notes, activeProjectId, getProject } = useWorkspace();
   const { toastSuccess, toastInfo } = useToast();
@@ -67,14 +75,34 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 var(--space-6)',
+        padding: isMobile ? '0 var(--space-3)' : '0 var(--space-6)',
         position: 'sticky',
         top: 0,
         zIndex: 'var(--z-sticky)',
+        gap: 'var(--space-2)',
       }}
     >
-      {/* Left: Quick Search Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+      {/* Left: Open Sidebar Button & Quick Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        {(sidebarCollapsed || isMobile) && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="btn-icon"
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+            }}
+            title={isMobile ? 'Open Menu' : 'Expand Sidebar (Cmd+B)'}
+          >
+            {isMobile ? <Menu size={16} /> : <PanelLeftOpen size={16} />}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onOpenSearch}
@@ -88,29 +116,31 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
             padding: '5px 10px',
             color: 'var(--text-muted)',
             fontSize: 'var(--text-xs)',
-            width: '240px',
+            width: isMobile ? 'auto' : '220px',
             cursor: 'pointer',
             transition: 'border-color var(--transition-fast)',
           }}
           title="Search workspace (Cmd+K)"
         >
           <Search size={13} />
-          <span style={{ flex: 1, textAlign: 'left' }}>Search...</span>
-          <kbd
-            style={{
-              fontSize: '10px',
-              padding: '1px 4px',
-              backgroundColor: 'var(--bg-surface-active)',
-              border: '1px solid var(--border-muted)',
-              borderRadius: 'var(--radius-xs)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            ⌘K
-          </kbd>
+          {!isMobile && <span style={{ flex: 1, textAlign: 'left' }}>Search...</span>}
+          {!isMobile && (
+            <kbd
+              style={{
+                fontSize: '10px',
+                padding: '1px 4px',
+                backgroundColor: 'var(--bg-surface-active)',
+                border: '1px solid var(--border-muted)',
+                borderRadius: 'var(--radius-xs)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              ⌘K
+            </kbd>
+          )}
         </button>
 
-        {activeProject && (
+        {activeProject && !isMobile && (
           <div
             style={{
               display: 'flex',
@@ -118,10 +148,11 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
               gap: 9,
               fontSize: 'var(--text-xs)',
               color: 'var(--text-secondary)',
+              marginLeft: 'var(--space-1)',
             }}
           >
             <ProjectAvatar project={activeProject} size={26} showGlow />
-            <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+            <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }} className="truncate">
               {activeProject.name}
             </span>
           </div>

@@ -396,3 +396,91 @@ input:focus, textarea:focus, select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ============================================================================
+   Checklists & Native <details> / <summary>
+   ============================================================================ */
+details.checklist-section-details > summary {
+  list-style: none;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+details.checklist-section-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.checklist-section-details > summary::marker {
+  display: none;
+}
+
+details.checklist-section-details summary:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* ============================================================================
+   CSS Container Queries (@container maincontent)
+   ============================================================================ */
+@container maincontent (max-width: 900px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .metric-strip-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@container maincontent (max-width: 680px) {
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .metric-strip-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .task-kanban-board-container {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+  }
+  .task-kanban-column {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ============================================================================
+   Mobile Responsiveness Media Queries
+   ============================================================================ */
+@media (max-width: 768px) {
+  .page-container {
+    padding: var(--space-4) !important;
+  }
+
+  .project-header-container {
+    padding: var(--space-3) var(--space-4) 0 !important;
+  }
+
+  .nav-tabs-container {
+    gap: var(--space-3) !important;
+    white-space: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modals on mobile */
+  .glass-panel.animate-pop {
+    max-width: calc(100vw - 24px) !important;
+    border-radius: var(--radius-lg) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: var(--space-3) !important;
+  }
+}
+

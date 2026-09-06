@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -6,8 +6,7 @@ import {
   BookOpen,
   Settings,
   Plus,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
   TrendingUp,
 } from 'lucide-react';
 import { ProjectTree } from './ProjectTree';
@@ -16,139 +15,202 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { DevOrbitLogo } from '../common/DevOrbitLogo';
 
 export const Sidebar = ({
-  collapsed,
+  width = 260,
+  collapsed = false,
+  onResize,
   onToggleCollapse,
   onAddProject,
   onAddSubproject,
   onEditProject,
+  isMobile = false,
 }) => {
-  const { activeProjectId, getProject, setActiveProjectId, getRootProjects } = useWorkspace();
+  const { activeProjectId, getProject, setActiveProjectId } = useWorkspace();
   const navigate = useNavigate();
+  const isResizingRef = useRef(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
-  const rootProjects = getRootProjects ? getRootProjects() : [];
+
+  // VS Code-style sidebar drag resizing
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    setIsResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (moveEvent) => {
+      if (!isResizingRef.current) return;
+      const newWidth = moveEvent.clientX;
+      if (newWidth < 140) {
+        onToggleCollapse(true);
+      } else {
+        if (collapsed) onToggleCollapse(false);
+        const clampedWidth = Math.max(170, Math.min(500, newWidth));
+        if (onResize) onResize(clampedWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false;
+      setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // If collapsed, completely hide sidebar content (no logo, no icons)
+  if (collapsed && !isMobile) {
+    return null;
+  }
 
   return (
-    <aside
-      style={{
-        width: collapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
-        height: '100vh',
-        backgroundColor: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--border-default)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'sticky',
-        top: 0,
-        zIndex: 'var(--z-sticky)',
-        transition: 'width var(--transition-fast)',
-        flexShrink: 0,
-      }}
-    >
-      {/* Brand Header with Close and Open button AT THE TOP */}
-      <div
-        style={{
-          height: 'var(--header-height)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: collapsed ? '0 var(--space-1)' : '0 var(--space-3)',
-          borderBottom: '1px solid var(--border-default)',
-          gap: 'var(--space-2)',
-        }}
-      >
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && !collapsed && (
         <div
-          onClick={() => {
-            setActiveProjectId(null);
-            navigate('/');
-          }}
+          onClick={() => onToggleCollapse(true)}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
-            overflow: 'hidden',
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 'calc(var(--z-modal) - 1)',
           }}
-          title="devOrbit Home"
-        >
-          {collapsed ? (
-            <DevOrbitLogo variant="icon" height={24} />
-          ) : (
-            <DevOrbitLogo variant="horizontal" height={26} />
-          )}
-        </div>
+        />
+      )}
 
-        {/* Top Toggle Button (Both Close & Open are here at the top) */}
-        <button
-          onClick={onToggleCollapse}
-          className="btn-icon"
-          style={{ width: 24, height: 24 }}
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-        >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-        </button>
-      </div>
-
-      {/* Main Navigation Scroll Area */}
-      <div
+      <aside
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: collapsed ? 'var(--space-2) var(--space-1)' : 'var(--space-3) var(--space-2)',
+          width: isMobile ? '280px' : `${width}px`,
+          height: '100vh',
+          backgroundColor: 'var(--bg-sidebar)',
+          borderRight: '1px solid var(--border-default)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 'var(--space-4)',
+          position: isMobile ? 'fixed' : 'sticky',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          zIndex: isMobile ? 'var(--z-modal)' : 'var(--z-sticky)',
+          flexShrink: 0,
+          transition: isResizing ? 'none' : 'transform var(--transition-fast), width var(--transition-fast)',
+          transform: isMobile && collapsed ? 'translateX(-100%)' : 'translateX(0)',
+          userSelect: isResizing ? 'none' : 'auto',
+          boxShadow: isMobile && !collapsed ? '0 10px 30px rgba(0,0,0,0.5)' : 'none',
         }}
       >
-        {/* Top Navigation Links */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <NavLink
-            to="/"
-            onClick={() => setActiveProjectId(null)}
-            style={({ isActive }) => ({
+        {/* Brand Header with Close button */}
+        <div
+          style={{
+            height: 'var(--header-height)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 var(--space-3)',
+            borderBottom: '1px solid var(--border-default)',
+            gap: 'var(--space-2)',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            onClick={() => {
+              setActiveProjectId(null);
+              navigate('/');
+              if (isMobile) onToggleCollapse(true);
+            }}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              gap: 'var(--space-2)',
-              padding: '6px 8px',
-              borderRadius: 'var(--radius-sm)',
-              color: isActive && !activeProjectId ? 'var(--text-primary)' : 'var(--text-secondary)',
-              backgroundColor: isActive && !activeProjectId ? 'var(--bg-surface-active)' : 'transparent',
-              fontWeight: isActive && !activeProjectId ? 'var(--font-weight-medium)' : 'normal',
-              fontSize: 'var(--text-xs)',
-              textDecoration: 'none',
-              transition: 'background-color var(--transition-fast)',
-            })}
-            title="Projects Overview"
+              cursor: 'pointer',
+              overflow: 'hidden',
+            }}
+            title="devOrbit Home"
           >
-            <LayoutDashboard size={15} />
-            {!collapsed && <span>Projects Overview</span>}
-          </NavLink>
+            <DevOrbitLogo variant="horizontal" height={26} />
+          </div>
 
-          <NavLink
-            to="/analytics"
-            onClick={() => setActiveProjectId(null)}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              gap: 'var(--space-2)',
-              padding: '6px 8px',
-              borderRadius: 'var(--radius-sm)',
-              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-              fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-              fontSize: 'var(--text-xs)',
-              textDecoration: 'none',
-              transition: 'background-color var(--transition-fast)',
-            })}
-            title="Work Analytics & Profile"
+          {/* Close Sidebar button */}
+          <button
+            onClick={() => onToggleCollapse(true)}
+            className="btn-icon"
+            style={{ width: 26, height: 26 }}
+            title="Collapse Sidebar"
           >
-            <TrendingUp size={15} />
-            {!collapsed && <span>Work Analytics</span>}
-          </NavLink>
+            <PanelLeftClose size={15} />
+          </button>
         </div>
 
-        {/* Project Tree Section */}
-        {!collapsed && (
+        {/* Main Navigation Scroll Area */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: 'var(--space-3) var(--space-2)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4)',
+          }}
+        >
+          {/* Top Navigation Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <NavLink
+              to="/"
+              onClick={() => {
+                setActiveProjectId(null);
+                if (isMobile) onToggleCollapse(true);
+              }}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: '6px 8px',
+                borderRadius: 'var(--radius-sm)',
+                color: isActive && !activeProjectId ? 'var(--text-primary)' : 'var(--text-secondary)',
+                backgroundColor: isActive && !activeProjectId ? 'var(--bg-surface-active)' : 'transparent',
+                fontWeight: isActive && !activeProjectId ? 'var(--font-weight-medium)' : 'normal',
+                fontSize: 'var(--text-xs)',
+                textDecoration: 'none',
+                transition: 'background-color var(--transition-fast)',
+              })}
+              title="Projects Overview"
+            >
+              <LayoutDashboard size={15} />
+              <span>Projects Overview</span>
+            </NavLink>
+
+            <NavLink
+              to="/analytics"
+              onClick={() => {
+                setActiveProjectId(null);
+                if (isMobile) onToggleCollapse(true);
+              }}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: '6px 8px',
+                borderRadius: 'var(--radius-sm)',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                fontSize: 'var(--text-xs)',
+                textDecoration: 'none',
+                transition: 'background-color var(--transition-fast)',
+              })}
+              title="Engineering Analytics & Velocity"
+            >
+              <TrendingUp size={15} />
+              <span>Work Analytics</span>
+            </NavLink>
+          </div>
+
+          {/* Project Tree Section */}
           <div>
             <div
               style={{
@@ -172,7 +234,10 @@ export const Sidebar = ({
                 Projects
               </span>
               <button
-                onClick={onAddProject}
+                onClick={() => {
+                  onAddProject();
+                  if (isMobile) onToggleCollapse(true);
+                }}
                 className="btn-icon"
                 style={{ width: 18, height: 18 }}
                 title="Create new project"
@@ -183,196 +248,178 @@ export const Sidebar = ({
 
             <ProjectTree
               onAddProject={onAddProject}
-              onAddSubproject={onAddSubproject}
-              onEditProject={onEditProject}
+              onAddSubproject={(pId) => {
+                onAddSubproject(pId);
+                if (isMobile) onToggleCollapse(true);
+              }}
+              onEditProject={(p) => {
+                onEditProject(p);
+                if (isMobile) onToggleCollapse(true);
+              }}
             />
           </div>
-        )}
 
-        {/* Collapsed Mode Project Quick-Switcher Rail */}
-        {collapsed && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              paddingTop: 'var(--space-2)',
-              borderTop: '1px solid var(--border-subtle)',
-            }}
-          >
-            {rootProjects.map((p) => {
-              const isSelected = activeProjectId === p.id;
-              return (
-                <NavLink
-                  key={p.id}
-                  to={`/project/${p.id}/tasks`}
-                  onClick={() => setActiveProjectId(p.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 2,
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: isSelected ? 'var(--bg-surface-active)' : 'transparent',
-                    border: isSelected ? `2px solid ${p.color || 'var(--color-primary)'}` : '2px solid transparent',
-                    transition: 'all var(--transition-fast)',
-                    textDecoration: 'none',
-                  }}
-                  title={p.name}
-                >
-                  <ProjectAvatar project={p} size={32} showGlow={isSelected} />
-                </NavLink>
-              );
-            })}
-            <button
-              onClick={onAddProject}
-              className="btn-icon"
-              style={{ width: 28, height: 28, borderRadius: 'var(--radius-md)', marginTop: 2 }}
-              title="Create new project"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        )}
-
-        {/* Active Project Tools */}
-        {activeProject && !collapsed && (
-          <div
-            style={{
-              paddingTop: 'var(--space-3)',
-              borderTop: '1px solid var(--border-subtle)',
-            }}
-          >
+          {/* Active Project Tools */}
+          {activeProject && (
             <div
               style={{
-                fontSize: 'var(--text-2xs)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 'var(--space-1)',
-                paddingLeft: 'var(--space-2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
+                paddingTop: 'var(--space-3)',
+                borderTop: '1px solid var(--border-subtle)',
               }}
             >
-              <ProjectAvatar project={activeProject} size={24} showGlow />
-              <span className="truncate">{activeProject.name}</span>
+              <div
+                style={{
+                  fontSize: 'var(--text-2xs)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 'var(--space-1)',
+                  paddingLeft: 'var(--space-2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <ProjectAvatar project={activeProject} size={24} showGlow />
+                <span className="truncate">{activeProject.name}</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <NavLink
+                  to={`/project/${activeProject.id}/tasks`}
+                  onClick={() => isMobile && onToggleCollapse(true)}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                    fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                    fontSize: 'var(--text-xs)',
+                    textDecoration: 'none',
+                  })}
+                >
+                  <CheckSquare size={14} />
+                  <span>Tasks & Issues</span>
+                </NavLink>
+
+                <NavLink
+                  to={`/project/${activeProject.id}/overview`}
+                  onClick={() => isMobile && onToggleCollapse(true)}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                    fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                    fontSize: 'var(--text-xs)',
+                    textDecoration: 'none',
+                  })}
+                >
+                  <LayoutDashboard size={14} />
+                  <span>Overview</span>
+                </NavLink>
+
+                <NavLink
+                  to={`/project/${activeProject.id}/analytics`}
+                  onClick={() => isMobile && onToggleCollapse(true)}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                    fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                    fontSize: 'var(--text-xs)',
+                    textDecoration: 'none',
+                  })}
+                >
+                  <TrendingUp size={14} />
+                  <span>Analytics</span>
+                </NavLink>
+
+                <NavLink
+                  to={`/project/${activeProject.id}/notes`}
+                  onClick={() => isMobile && onToggleCollapse(true)}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+                    fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
+                    fontSize: 'var(--text-xs)',
+                    textDecoration: 'none',
+                  })}
+                >
+                  <BookOpen size={14} />
+                  <span>Docs</span>
+                </NavLink>
+              </div>
             </div>
+          )}
+        </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <NavLink
-                to={`/project/${activeProject.id}/overview`}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: '6px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                  fontSize: 'var(--text-xs)',
-                  textDecoration: 'none',
-                })}
-              >
-                <LayoutDashboard size={14} />
-                <span>Overview</span>
-              </NavLink>
-
-              <NavLink
-                to={`/project/${activeProject.id}/tasks`}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: '6px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                  fontSize: 'var(--text-xs)',
-                  textDecoration: 'none',
-                })}
-              >
-                <CheckSquare size={14} />
-                <span>Tasks & Issues</span>
-              </NavLink>
-
-              <NavLink
-                to={`/project/${activeProject.id}/analytics`}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: '6px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                  fontSize: 'var(--text-xs)',
-                  textDecoration: 'none',
-                })}
-              >
-                <TrendingUp size={14} />
-                <span>Analytics</span>
-              </NavLink>
-
-              <NavLink
-                to={`/project/${activeProject.id}/notes`}
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: '6px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                  fontSize: 'var(--text-xs)',
-                  textDecoration: 'none',
-                })}
-              >
-                <BookOpen size={14} />
-                <span>Docs</span>
-              </NavLink>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer / Settings (Clean, no expand button here) */}
-      <div
-        style={{
-          padding: collapsed ? 'var(--space-2) 0' : 'var(--space-2) var(--space-2)',
-          borderTop: '1px solid var(--border-default)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: collapsed ? 'center' : 'stretch',
-        }}
-      >
-        <NavLink
-          to="/settings"
-          style={({ isActive }) => ({
+        {/* Footer / Settings */}
+        <div
+          style={{
+            padding: 'var(--space-2) var(--space-2)',
+            borderTop: '1px solid var(--border-default)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: 'var(--space-2)',
-            padding: '6px 8px',
-            borderRadius: 'var(--radius-sm)',
-            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-            backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-            fontSize: 'var(--text-xs)',
-            textDecoration: 'none',
-          })}
-          title="Settings & Backup"
+            flexDirection: 'column',
+          }}
         >
-          <Settings size={15} />
-          {!collapsed && <span>Settings</span>}
-        </NavLink>
-      </div>
-    </aside>
+          <NavLink
+            to="/settings"
+            onClick={() => isMobile && onToggleCollapse(true)}
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-2)',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-sm)',
+              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
+              fontSize: 'var(--text-xs)',
+              textDecoration: 'none',
+            })}
+            title="Settings & Backup"
+          >
+            <Settings size={15} />
+            <span>Settings</span>
+          </NavLink>
+        </div>
+
+        {/* VS Code-style Draggable Resizer Handle */}
+        {!isMobile && (
+          <div
+            onMouseDown={handleMouseDown}
+            className="sidebar-resizer"
+            title="Drag to resize sidebar (Drag left to collapse)"
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: -3,
+              width: 6,
+              height: '100%',
+              cursor: 'col-resize',
+              zIndex: 10,
+              backgroundColor: isResizing ? 'var(--color-primary)' : 'transparent',
+              transition: 'background-color var(--transition-fast)',
+            }}
+          />
+        )}
+      </aside>
+    </>
   );
 };

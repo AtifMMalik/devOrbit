@@ -123,7 +123,7 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--space-8)', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+    <div className="page-container" style={{ padding: 'var(--space-8)', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
       <div>
         <h1 style={{ fontSize: 'var(--text-3xl)', margin: 0 }}>Workspace Settings</h1>
         <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>
@@ -132,7 +132,7 @@ export const SettingsPage = () => {
       </div>
 
       {/* Workspace Stats Card */}
-      <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', textAlign: 'center' }}>
+      <div className="settings-stats-grid card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', textAlign: 'center' }}>
         <div>
           <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--color-primary)' }}>
             {stats.totalProjects}
