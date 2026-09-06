@@ -4,11 +4,11 @@ import {
   Plus,
   FolderPlus,
   TrendingUp,
-  ArrowRight,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProjectStats } from '../hooks/useProjectStats';
 import { ProjectCard } from '../components/projects/ProjectCard';
+import { ProjectAvatar } from '../components/common/ProjectAvatar';
 import { Button } from '../components/common/Button';
 import { StatusBadge, PriorityBadge, TagBadge } from '../components/common/Badge';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
@@ -260,11 +260,15 @@ export const DashboardOverviewPage = () => {
                           fontSize: '10px',
                           color: 'var(--text-muted)',
                           backgroundColor: 'var(--bg-surface-active)',
-                          padding: '1px 5px',
+                          padding: '2px 6px',
                           borderRadius: 'var(--radius-xs)',
                           flexShrink: 0,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
                         }}
                       >
+                        <ProjectAvatar project={proj} size={12} />
                         {proj.name}
                       </span>
                     )}

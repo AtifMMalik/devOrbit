@@ -15,6 +15,7 @@ import { exportWorkspaceJSON } from '../../utils/storage';
 import { useToast } from '../../context/ToastContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { DataSyncProgressModal } from '../common/DataSyncProgressModal';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 
 export const Header = ({ onOpenSearch, onNewProject }) => {
   const { theme, toggleTheme } = useTheme();
@@ -114,19 +115,12 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 9,
               fontSize: 'var(--text-xs)',
               color: 'var(--text-secondary)',
             }}
           >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                backgroundColor: activeProject.color || 'var(--color-primary)',
-              }}
-            />
+            <ProjectAvatar project={activeProject} size={26} showGlow />
             <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
               {activeProject.name}
             </span>

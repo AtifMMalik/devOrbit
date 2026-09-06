@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { ProjectTree } from './ProjectTree';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { DevOrbitLogo } from '../common/DevOrbitLogo';
 
@@ -21,10 +22,11 @@ export const Sidebar = ({
   onAddSubproject,
   onEditProject,
 }) => {
-  const { activeProjectId, getProject, setActiveProjectId } = useWorkspace();
+  const { activeProjectId, getProject, setActiveProjectId, getRootProjects } = useWorkspace();
   const navigate = useNavigate();
 
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
+  const rootProjects = getRootProjects ? getRootProjects() : [];
 
   return (
     <aside
@@ -187,6 +189,53 @@ export const Sidebar = ({
           </div>
         )}
 
+        {/* Collapsed Mode Project Quick-Switcher Rail */}
+        {collapsed && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 'var(--space-2)',
+              paddingTop: 'var(--space-2)',
+              borderTop: '1px solid var(--border-subtle)',
+            }}
+          >
+            {rootProjects.map((p) => {
+              const isSelected = activeProjectId === p.id;
+              return (
+                <NavLink
+                  key={p.id}
+                  to={`/project/${p.id}/overview`}
+                  onClick={() => setActiveProjectId(p.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 2,
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: isSelected ? 'var(--bg-surface-active)' : 'transparent',
+                    border: isSelected ? `2px solid ${p.color || 'var(--color-primary)'}` : '2px solid transparent',
+                    transition: 'all var(--transition-fast)',
+                    textDecoration: 'none',
+                  }}
+                  title={p.name}
+                >
+                  <ProjectAvatar project={p} size={32} showGlow={isSelected} />
+                </NavLink>
+              );
+            })}
+            <button
+              onClick={onAddProject}
+              className="btn-icon"
+              style={{ width: 28, height: 28, borderRadius: 'var(--radius-md)', marginTop: 2 }}
+              title="Create new project"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Active Project Tools */}
         {activeProject && !collapsed && (
           <div
@@ -206,17 +255,10 @@ export const Sidebar = ({
                 paddingLeft: 'var(--space-2)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 8,
               }}
             >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  backgroundColor: activeProject.color || 'var(--color-primary)',
-                }}
-              />
+              <ProjectAvatar project={activeProject} size={24} showGlow />
               <span className="truncate">{activeProject.name}</span>
             </div>
 

@@ -245,6 +245,7 @@ export const sanitizeWorkspaceData = (rawData) => {
       name: pName || 'Untitled Project',
       description: p.description ? String(p.description).trim() : '',
       color: p.color || '#6366f1',
+      logo: typeof p.logo === 'string' && p.logo.trim() ? p.logo.trim() : null,
       icon: p.icon || 'Folder',
       tags: cleanTags,
       todos: cleanTodos,

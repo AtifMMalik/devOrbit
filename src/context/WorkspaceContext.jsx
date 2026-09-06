@@ -40,6 +40,7 @@ export const WorkspaceProvider = ({ children }) => {
       name: projectData.name.trim(),
       description: projectData.description?.trim() || '',
       color: projectData.color || '#0084ff',
+      logo: projectData.logo || null,
       icon: projectData.icon || 'Folder',
       tags: projectData.tags || [],
       todos: Array.isArray(projectData.todos) ? projectData.todos : [],

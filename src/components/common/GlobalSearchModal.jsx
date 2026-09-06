@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Folder, CheckSquare, FileText, CornerDownLeft, X } from 'lucide-react';
+import { Search, CheckSquare, FileText, CornerDownLeft } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { StatusBadge, PriorityBadge } from './Badge';
+import { ProjectAvatar } from './ProjectAvatar';
 
 export const GlobalSearchModal = ({ isOpen, onClose }) => {
   const { projects, tasks, notes, setActiveProjectId } = useWorkspace();
@@ -220,9 +221,7 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
               {results.map((item, index) => {
                 const isSelected = index === selectedIndex;
                 const Icon =
-                  item.type === 'project'
-                    ? Folder
-                    : item.type === 'task'
+                  item.type === 'task'
                     ? CheckSquare
                     : FileText;
 
@@ -243,7 +242,11 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flex: 1, minWidth: 0 }}>
-                      <Icon size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                      {item.type === 'project' ? (
+                        <ProjectAvatar project={item.raw} size={18} showGlow />
+                      ) : (
+                        <Icon size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                      )}
 
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div

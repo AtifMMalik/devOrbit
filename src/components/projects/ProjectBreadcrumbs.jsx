@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Home, Folder } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 export const ProjectBreadcrumbs = ({ projectId }) => {
@@ -44,18 +45,10 @@ export const ProjectBreadcrumbs = ({ projectId }) => {
                   color: 'var(--text-primary)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 'var(--space-1)',
+                  gap: 6,
                 }}
               >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: crumb.color || 'var(--color-primary)',
-                    display: 'inline-block',
-                  }}
-                />
+                <ProjectAvatar project={crumb} size={14} />
                 {crumb.name}
               </span>
             ) : (
@@ -66,10 +59,10 @@ export const ProjectBreadcrumbs = ({ projectId }) => {
                   color: 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 'var(--space-1)',
+                  gap: 6,
                 }}
               >
-                <Folder size={12} />
+                <ProjectAvatar project={crumb} size={14} />
                 <span>{crumb.name}</span>
               </Link>
             )}

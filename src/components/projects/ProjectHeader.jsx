@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { ProjectBreadcrumbs } from './ProjectBreadcrumbs';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 import { Button } from '../common/Button';
 
 export const ProjectHeader = ({
@@ -93,24 +94,19 @@ export const ProjectHeader = ({
 
       {/* Main Project Title & Description */}
       <div style={{ marginBottom: 'var(--space-3)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              backgroundColor: project.color || 'var(--color-primary)',
-            }}
-          />
-          <h1 style={{ fontSize: 'var(--text-lg)', margin: 0, fontWeight: 'var(--font-weight-semibold)' }}>
-            {project.name}
-          </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <ProjectAvatar project={project} size={50} showGlow />
+          <div>
+            <h1 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 'var(--font-weight-bold)', lineHeight: 1.2 }}>
+              {project.name}
+            </h1>
+            {project.description && (
+              <p style={{ marginTop: '2px', maxWidth: '750px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
+                {project.description}
+              </p>
+            )}
+          </div>
         </div>
-        {project.description && (
-          <p style={{ marginTop: '2px', maxWidth: '750px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-            {project.description}
-          </p>
-        )}
       </div>
 
       {/* Navigation Tool Tabs */}

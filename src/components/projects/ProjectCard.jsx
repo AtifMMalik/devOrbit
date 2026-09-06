@@ -4,6 +4,7 @@ import { Layers, Plus, MoreHorizontal } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useProjectStats } from '../../hooks/useProjectStats';
 import { TagBadge } from '../common/Badge';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 
 export const ProjectCard = ({
   project,
@@ -40,15 +41,7 @@ export const ProjectCard = ({
       <div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--space-1-5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: project.color || 'var(--color-primary)',
-                flexShrink: 0,
-              }}
-            />
+            <ProjectAvatar project={project} size={24} showGlow />
             <h3 style={{ fontSize: 'var(--text-sm)', margin: 0, fontWeight: 'var(--font-weight-semibold)' }}>
               {project.name}
             </h3>

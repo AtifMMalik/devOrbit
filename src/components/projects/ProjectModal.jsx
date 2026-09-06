@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Folder, Palette, Tag, Layers, Check, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Check, Trash2, Upload, X } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ProjectAvatar } from '../common/ProjectAvatar';
+import { processProjectLogoFile } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -26,15 +28,19 @@ export const ProjectModal = ({
   editingProject = null,
 }) => {
   const { projects, createProject, updateProject, deleteProject, setActiveProjectId } = useWorkspace();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess, toastError, toastInfo } = useToast();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [parentId, setParentId] = useState(initialParentId);
   const [color, setColor] = useState('#6366f1');
+  const [logo, setLogo] = useState(null);
+  const [isProcessingLogo, setIsProcessingLogo] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (editingProject) {
@@ -42,15 +48,41 @@ export const ProjectModal = ({
       setDescription(editingProject.description || '');
       setParentId(editingProject.parentId || null);
       setColor(editingProject.color || '#6366f1');
+      setLogo(editingProject.logo || null);
       setTags(editingProject.tags || []);
     } else {
       setName('');
       setDescription('');
       setParentId(initialParentId);
       setColor(COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)]);
+      setLogo(null);
       setTags([]);
     }
   }, [editingProject, initialParentId, isOpen]);
+
+  const handleLogoFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsProcessingLogo(true);
+      const optimizedLogo = await processProjectLogoFile(file, { maxSize: 160, quality: 0.85 });
+      setLogo(optimizedLogo);
+      toastSuccess('Project logo uploaded and optimized');
+    } catch (err) {
+      toastError(err.message || 'Failed to process image');
+    } finally {
+      setIsProcessingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogo(null);
+    toastInfo('Project logo removed');
+  };
 
   const handleAddTag = (e) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -80,6 +112,7 @@ export const ProjectModal = ({
         description,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
+        logo,
         tags,
       });
       toastSuccess(`Updated "${name}" successfully`);
@@ -89,6 +122,7 @@ export const ProjectModal = ({
         description,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
+        logo,
         tags,
       });
       setActiveProjectId(newProj.id);
@@ -111,14 +145,107 @@ export const ProjectModal = ({
       title={editingProject ? 'Edit Project' : initialParentId ? 'Create Sub-Project' : 'Create New Project'}
       subtitle={
         editingProject
-          ? 'Update project details and settings'
+          ? 'Update project details, logo, and settings'
           : initialParentId
           ? 'Add a nested sub-project to organize tasks'
           : 'Create a top-level workspace project'
       }
-      maxWidth="540px"
+      maxWidth="560px"
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        {/* Project Logo / Icon & Visual Preview Banner */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-3)',
+            padding: 'var(--space-3)',
+            backgroundColor: 'var(--bg-surface-active)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <ProjectAvatar
+              project={{ name: name || 'Project', color, logo }}
+              size={54}
+              showGlow
+              style={{
+                borderRadius: 'var(--radius-md)',
+              }}
+            />
+            {logo && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                style={{
+                  position: 'absolute',
+                  top: -6,
+                  right: -6,
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  backgroundColor: '#f43f5e',
+                  color: '#ffffff',
+                  border: '1px solid var(--bg-surface)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+                title="Remove uploaded logo"
+              >
+                <X size={10} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon={Upload}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingLogo}
+              >
+                {isProcessingLogo ? 'Optimizing...' : logo ? 'Change Logo' : 'Upload Logo / Icon'}
+              </Button>
+
+              {logo && (
+                <button
+                  type="button"
+                  onClick={handleRemoveLogo}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-muted)',
+                    fontSize: 'var(--text-xs)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+              onChange={handleLogoFileChange}
+              style={{ display: 'none' }}
+            />
+
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Upload custom image (PNG, JPG, SVG, WebP). Used across navigation, header, & cards.
+            </p>
+          </div>
+        </div>
+
         {/* Project Name */}
         <div>
           <label

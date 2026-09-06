@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { ProjectAvatar } from '../common/ProjectAvatar';
 import { useWorkspace } from '../../context/WorkspaceContext';
 
 export const ProjectTreeItem = ({
@@ -29,13 +30,13 @@ export const ProjectTreeItem = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '3px 6px',
+          padding: '4px 6px',
           borderRadius: 'var(--radius-sm)',
           backgroundColor: isSelected ? 'var(--bg-surface-active)' : 'transparent',
           transition: 'background-color var(--transition-fast)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
           {hasSubprojects ? (
             <button
               onClick={toggleOpen}
@@ -61,7 +62,7 @@ export const ProjectTreeItem = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 8,
               flex: 1,
               minWidth: 0,
               color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
@@ -70,15 +71,7 @@ export const ProjectTreeItem = ({
               textDecoration: 'none',
             }}
           >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                backgroundColor: project.color || 'var(--color-primary)',
-                flexShrink: 0,
-              }}
-            />
+            <ProjectAvatar project={project} size={26} />
             <span className="truncate">{project.name}</span>
           </NavLink>
         </div>
