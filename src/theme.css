@@ -1,0 +1,372 @@
+/**
+ * theme.css — devOrbit Global Design System & Variables
+ * Custom tailored to devOrbit brand identity: Electric Orbit Blue (#0084ff) & Midnight Slate.
+ */
+
+:root {
+  /* ==========================================================================
+     Typography Tokens (Adjusted for enhanced readability)
+     ========================================================================== */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --text-2xs: 0.75rem;   /* 12px */
+  --text-xs: 0.8125rem;  /* 13px */
+  --text-sm: 0.90625rem; /* 14.5px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.3125rem;  /* 21px */
+  --text-2xl: 1.625rem;  /* 26px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-snug: 1.35;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.55;
+
+  /* ==========================================================================
+     Spacing Scale
+     ========================================================================== */
+  --space-0-5: 0.125rem; /* 2px */
+  --space-1: 0.25rem;    /* 4px */
+  --space-1-5: 0.375rem; /* 6px */
+  --space-2: 0.5rem;     /* 8px */
+  --space-2-5: 0.625rem; /* 10px */
+  --space-3: 0.75rem;    /* 12px */
+  --space-3-5: 0.875rem; /* 14px */
+  --space-4: 1rem;       /* 16px */
+  --space-5: 1.25rem;    /* 20px */
+  --space-6: 1.5rem;     /* 24px */
+  --space-8: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+
+  /* ==========================================================================
+     Border Radii (Clean, subtle curves)
+     ========================================================================== */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* ==========================================================================
+     Transitions & Animations
+     ========================================================================== */
+  --transition-fast: 120ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* ==========================================================================
+     Z-Index Scale
+     ========================================================================== */
+  --z-base: 1;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* ==========================================================================
+     Layout Measurements
+     ========================================================================== */
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 54px;
+}
+
+/* ============================================================================
+   Dark Theme (devOrbit Midnight Space & Electric Azure)
+   ============================================================================ */
+:root, [data-theme="dark"] {
+  --color-scheme: dark;
+
+  /* Midnight Space Dark Backgrounds */
+  --bg-app: #090d16;
+  --bg-sidebar: #0d1220;
+  --bg-header: rgba(13, 18, 32, 0.90);
+  --bg-surface: #121829;
+  --bg-surface-hover: #182035;
+  --bg-surface-active: #1e2942;
+  --bg-card: #111625;
+  --bg-card-hover: #171e32;
+  --bg-card-subtle: #0d111d;
+  --bg-elevated: #171f34;
+  --bg-overlay: rgba(4, 7, 13, 0.78);
+  --bg-input: #0e1322;
+  --bg-input-focus: #121829;
+
+  /* Crisp, Low-Contrast Slate Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-muted: rgba(255, 255, 255, 0.09);
+  --border-default: #1d2740;
+  --border-hover: #2e3e63;
+  --border-active: #0084ff;
+
+  /* Clean Typography Hierarchy */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-disabled: #475569;
+  --text-inverse: #090d16;
+
+  /* Primary Accent — Electric devOrbit Azure Blue (#0084ff) */
+  --primary-50: #f0f7ff;
+  --primary-100: #e0effe;
+  --primary-200: #bae0fd;
+  --primary-300: #7cc5fb;
+  --primary-400: #38a6f8;
+  --primary-500: #0084ff;
+  --primary-600: #0070db;
+  --primary-700: #005cb8;
+  --primary-800: #004b94;
+  --primary-900: #003d7a;
+  
+  --color-primary: #0084ff;
+  --color-primary-hover: #1a91ff;
+  --color-primary-light: rgba(0, 132, 255, 0.12);
+  --color-primary-border: rgba(0, 132, 255, 0.32);
+  --color-primary-glow: 0 0 16px rgba(0, 132, 255, 0.25);
+
+  /* Secondary Accent (Orbit Cyan Glow) */
+  --color-accent: #38bdf8;
+  --color-accent-hover: #0ea5e9;
+  --color-accent-light: rgba(56, 189, 248, 0.12);
+  --color-accent-border: rgba(56, 189, 248, 0.28);
+
+  /* Status Colors (Subtle, Clean) */
+  --status-current-bg: rgba(0, 132, 255, 0.10);
+  --status-current-border: rgba(0, 132, 255, 0.26);
+  --status-current-text: #38bdf8;
+  --status-current-solid: #0084ff;
+
+  --status-later-bg: rgba(245, 158, 11, 0.09);
+  --status-later-border: rgba(245, 158, 11, 0.22);
+  --status-later-text: #fbbf24;
+  --status-later-solid: #d97706;
+
+  --status-done-bg: rgba(16, 185, 129, 0.09);
+  --status-done-border: rgba(16, 185, 129, 0.22);
+  --status-done-text: #34d399;
+  --status-done-solid: #10b981;
+
+  /* Priority Indicators */
+  --priority-urgent-bg: rgba(244, 63, 94, 0.1);
+  --priority-urgent-text: #fb7185;
+  --priority-urgent-border: rgba(244, 63, 94, 0.25);
+
+  --priority-high-bg: rgba(249, 115, 22, 0.1);
+  --priority-high-text: #fb923c;
+  --priority-high-border: rgba(249, 115, 22, 0.25);
+
+  --priority-medium-bg: rgba(234, 179, 8, 0.1);
+  --priority-medium-text: #facc15;
+  --priority-medium-border: rgba(234, 179, 8, 0.25);
+
+  --priority-low-bg: rgba(148, 163, 184, 0.08);
+  --priority-low-text: #94a3b8;
+  --priority-low-border: rgba(148, 163, 184, 0.2);
+
+  /* Tag Palette (Understated, Minimalist) */
+  --tag-feature-bg: rgba(0, 132, 255, 0.12);
+  --tag-feature-text: #7cc5fb;
+  --tag-feature-border: rgba(0, 132, 255, 0.25);
+
+  --tag-bug-bg: rgba(244, 63, 94, 0.1);
+  --tag-bug-text: #fca5a5;
+  --tag-bug-border: rgba(244, 63, 94, 0.22);
+
+  --tag-doc-bg: rgba(16, 185, 129, 0.1);
+  --tag-doc-text: #6ee7b7;
+  --tag-doc-border: rgba(16, 185, 129, 0.22);
+
+  --tag-refactor-bg: rgba(168, 85, 247, 0.1);
+  --tag-refactor-text: #d8b4fe;
+  --tag-refactor-border: rgba(168, 85, 247, 0.22);
+
+  --tag-testing-bg: rgba(245, 158, 11, 0.1);
+  --tag-testing-text: #fcd34d;
+  --tag-testing-border: rgba(245, 158, 11, 0.22);
+
+  --tag-ui-bg: rgba(236, 72, 153, 0.1);
+  --tag-ui-text: #f472b6;
+  --tag-ui-border: rgba(236, 72, 153, 0.22);
+
+  --tag-devops-bg: rgba(14, 165, 233, 0.1);
+  --tag-devops-text: #7dd3fc;
+  --tag-devops-border: rgba(14, 165, 233, 0.22);
+
+  --tag-api-bg: rgba(20, 184, 166, 0.1);
+  --tag-api-text: #5eead4;
+  --tag-api-border: rgba(20, 184, 166, 0.22);
+
+  --tag-default-bg: rgba(148, 163, 184, 0.08);
+  --tag-default-text: #94a3b8;
+  --tag-default-border: rgba(148, 163, 184, 0.18);
+
+  /* Subtle Ambient Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 3px 6px -1px rgba(0, 0, 0, 0.35), 0 1px 3px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 16px -3px rgba(0, 0, 0, 0.45), 0 2px 5px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 16px 28px -5px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 14px rgba(0, 132, 255, 0.2);
+  --shadow-glow-cyan: 0 0 14px rgba(56, 189, 248, 0.2);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(18, 24, 41, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(10px);
+
+  /* Scrollbar */
+  --scrollbar-track: #090d16;
+  --scrollbar-thumb: #1d2740;
+  --scrollbar-thumb-hover: #2e3e63;
+}
+
+/* ============================================================================
+   Light Theme (Clean Brand Identity: Dark Navy & Electric Blue)
+   ============================================================================ */
+[data-theme="light"] {
+  --color-scheme: light;
+
+  /* Backgrounds */
+  --bg-app: #f8fafc;
+  --bg-sidebar: #f1f5f9;
+  --bg-header: rgba(241, 245, 249, 0.92);
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  --bg-surface-active: #e2e8f0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-card-subtle: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(11, 28, 58, 0.45);
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+
+  /* Borders */
+  --border-subtle: #f1f5f9;
+  --border-muted: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-hover: #94a3b8;
+  --border-active: #0084ff;
+
+  /* Text — Uses exact dark navy brand color (#0b1c3a) */
+  --text-primary: #0b1c3a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Brand / Primary Accent */
+  --color-primary: #0077f5;
+  --color-primary-hover: #0066d6;
+  --color-primary-light: rgba(0, 119, 245, 0.09);
+  --color-primary-border: rgba(0, 119, 245, 0.25);
+  --color-primary-glow: 0 0 12px rgba(0, 119, 245, 0.15);
+
+  /* Secondary Accent */
+  --color-accent: #0284c7;
+  --color-accent-hover: #0369a1;
+  --color-accent-light: rgba(2, 132, 199, 0.08);
+  --color-accent-border: rgba(2, 132, 199, 0.2);
+
+  /* Status Colors */
+  --status-current-bg: #e0f2fe;
+  --status-current-border: #bae6fd;
+  --status-current-text: #0284c7;
+  --status-current-solid: #0077f5;
+
+  --status-later-bg: #fef3c7;
+  --status-later-border: #fde68a;
+  --status-later-text: #b45309;
+  --status-later-solid: #d97706;
+
+  --status-done-bg: #ecfdf5;
+  --status-done-border: #a7f3d0;
+  --status-done-text: #047857;
+  --status-done-solid: #10b981;
+
+  /* Priority Palette */
+  --priority-urgent-bg: #ffe4e6;
+  --priority-urgent-text: #be123c;
+  --priority-urgent-border: #fecdd3;
+
+  --priority-high-bg: #ffedd5;
+  --priority-high-text: #c2410c;
+  --priority-high-border: #fed7aa;
+
+  --priority-medium-bg: #fef9c3;
+  --priority-medium-text: #a16207;
+  --priority-medium-border: #fef08a;
+
+  --priority-low-bg: #f1f5f9;
+  --priority-low-text: #475569;
+  --priority-low-border: #cbd5e1;
+
+  /* Tag Palette */
+  --tag-feature-bg: #eff6ff;
+  --tag-feature-text: #1d4ed8;
+  --tag-feature-border: #bfdbfe;
+
+  --tag-bug-bg: #fef2f2;
+  --tag-bug-text: #b91c1c;
+  --tag-bug-border: #fecaca;
+
+  --tag-doc-bg: #ecfdf5;
+  --tag-doc-text: #047857;
+  --tag-doc-border: #a7f3d0;
+
+  --tag-refactor-bg: #faf5ff;
+  --tag-refactor-text: #7e22ce;
+  --tag-refactor-border: #e9d5ff;
+
+  --tag-testing-bg: #fffbeb;
+  --tag-testing-text: #b45309;
+  --tag-testing-border: #fde68a;
+
+  --tag-ui-bg: #fdf2f8;
+  --tag-ui-text: #be185d;
+  --tag-ui-border: #fbcfe8;
+
+  --tag-devops-bg: #f0f9ff;
+  --tag-devops-text: #0369a1;
+  --tag-devops-border: #bae6fd;
+
+  --tag-api-bg: #f0fdfa;
+  --tag-api-text: #0f766e;
+  --tag-api-border: #99f6e4;
+
+  --tag-default-bg: #f1f5f9;
+  --tag-default-text: #334155;
+  --tag-default-border: #cbd5e1;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(11, 28, 58, 0.04);
+  --shadow-md: 0 3px 6px -1px rgba(11, 28, 58, 0.06), 0 1px 3px -1px rgba(11, 28, 58, 0.03);
+  --shadow-lg: 0 8px 16px -3px rgba(11, 28, 58, 0.08);
+  --shadow-xl: 0 16px 28px -5px rgba(11, 28, 58, 0.1);
+  --shadow-glow: none;
+  --shadow-glow-cyan: none;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(11, 28, 58, 0.08);
+  --glass-blur: blur(10px);
+
+  /* Scrollbar */
+  --scrollbar-track: #f8fafc;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}

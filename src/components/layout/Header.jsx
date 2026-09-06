@@ -1,0 +1,140 @@
+import React from 'react';
+import {
+  Search,
+  Sun,
+  Moon,
+  Plus,
+  Download,
+  FolderPlus,
+} from 'lucide-react';
+import { Button } from '../common/Button';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import { useTheme } from '../../context/ThemeContext';
+import { exportWorkspaceJSON } from '../../utils/storage';
+import { useToast } from '../../context/ToastContext';
+
+export const Header = ({ onOpenSearch, onNewProject }) => {
+  const { theme, toggleTheme } = useTheme();
+  const { projects, tasks, notes, activeProjectId, getProject } = useWorkspace();
+  const { toastSuccess } = useToast();
+
+  const activeProject = activeProjectId ? getProject(activeProjectId) : null;
+
+  const handleExportBackup = () => {
+    exportWorkspaceJSON({
+      version: '1.0.0',
+      projects,
+      tasks,
+      notes,
+    });
+    toastSuccess('Workspace backup downloaded');
+  };
+
+  return (
+    <header
+      style={{
+        height: 'var(--header-height)',
+        backgroundColor: 'var(--bg-header)',
+        borderBottom: '1px solid var(--border-default)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 var(--space-6)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 'var(--z-sticky)',
+      }}
+    >
+      {/* Left: Quick Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '5px 10px',
+            color: 'var(--text-muted)',
+            fontSize: 'var(--text-xs)',
+            width: '240px',
+            cursor: 'pointer',
+            transition: 'border-color var(--transition-fast)',
+          }}
+          title="Search workspace (Cmd+K)"
+        >
+          <Search size={13} />
+          <span style={{ flex: 1, textAlign: 'left' }}>Search...</span>
+          <kbd
+            style={{
+              fontSize: '10px',
+              padding: '1px 4px',
+              backgroundColor: 'var(--bg-surface-active)',
+              border: '1px solid var(--border-muted)',
+              borderRadius: 'var(--radius-xs)',
+              color: 'var(--text-muted)',
+            }}
+          >
+            ⌘K
+          </kbd>
+        </button>
+
+        {activeProject && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: activeProject.color || 'var(--color-primary)',
+              }}
+            />
+            <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+              {activeProject.name}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Right: + New Project button & Theme toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <Button
+          variant="primary"
+          size="sm"
+          icon={FolderPlus}
+          onClick={() => onNewProject(null)}
+        >
+          New Project
+        </Button>
+
+        <button
+          onClick={handleExportBackup}
+          className="btn-icon"
+          title="Export JSON Backup"
+        >
+          <Download size={14} />
+        </button>
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="btn-icon"
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
+      </div>
+    </header>
+  );
+};
