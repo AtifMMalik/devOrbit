@@ -321,6 +321,136 @@ export const WorkspaceProvider = ({ children }) => {
   }, []);
 
   // =========================================================================
+  // Project Checklists: To Dos & Testing
+  // =========================================================================
+
+  const getProjectTodos = useCallback((projectId) => {
+    const proj = data.projects.find((p) => p.id === projectId);
+    return proj?.todos || [];
+  }, [data.projects]);
+
+  const addProjectTodo = useCallback((projectId, text) => {
+    const newTodo = {
+      id: generateId('todo'),
+      text: text.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          todos: [...(p.todos || []), newTodo],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    return newTodo;
+  }, []);
+
+  const toggleProjectTodo = useCallback((projectId, todoId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const todos = (p.todos || []).map((t) =>
+          t.id === todoId ? { ...t, completed: !t.completed } : t
+        );
+        return { ...p, todos, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  const updateProjectTodo = useCallback((projectId, todoId, newText) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const todos = (p.todos || []).map((t) =>
+          t.id === todoId ? { ...t, text: newText } : t
+        );
+        return { ...p, todos, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  const deleteProjectTodo = useCallback((projectId, todoId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const todos = (p.todos || []).filter((t) => t.id !== todoId);
+        return { ...p, todos, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  const getProjectTesting = useCallback((projectId) => {
+    const proj = data.projects.find((p) => p.id === projectId);
+    return proj?.testing || [];
+  }, [data.projects]);
+
+  const addProjectTesting = useCallback((projectId, text) => {
+    const newTest = {
+      id: generateId('test'),
+      text: text.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          testing: [...(p.testing || []), newTest],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    return newTest;
+  }, []);
+
+  const toggleProjectTesting = useCallback((projectId, testId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const testing = (p.testing || []).map((t) =>
+          t.id === testId ? { ...t, completed: !t.completed } : t
+        );
+        return { ...p, testing, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  const updateProjectTesting = useCallback((projectId, testId, newText) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const testing = (p.testing || []).map((t) =>
+          t.id === testId ? { ...t, text: newText } : t
+        );
+        return { ...p, testing, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  const deleteProjectTesting = useCallback((projectId, testId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const testing = (p.testing || []).filter((t) => t.id !== testId);
+        return { ...p, testing, updatedAt: new Date().toISOString() };
+      }),
+    }));
+  }, []);
+
+  // =========================================================================
   // Workspace Backup & Recovery
   // =========================================================================
 
@@ -373,6 +503,17 @@ export const WorkspaceProvider = ({ children }) => {
         updateSubtask,
         removeSubtask,
         importTasks,
+        // Checklists methods
+        getProjectTodos,
+        addProjectTodo,
+        toggleProjectTodo,
+        updateProjectTodo,
+        deleteProjectTodo,
+        getProjectTesting,
+        addProjectTesting,
+        toggleProjectTesting,
+        updateProjectTesting,
+        deleteProjectTesting,
         // Notes methods
         getProjectNotes,
         saveProjectNote,

@@ -26,6 +26,7 @@ export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
   const { theme, setTheme } = useTheme();
   const { toastSuccess, toastError } = useToast();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
   const fileInputRef = useRef(null);
 
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);

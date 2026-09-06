@@ -25,11 +25,14 @@ export const ProjectOverviewPage = () => {
 
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deletingSubprojectId, setDeletingSubprojectId] = useState(null);
 
   const project = getProject(projectId);
   const subProjects = getSubProjects(projectId);
   const rollupTasks = getProjectTasks(projectId, true);
   const stats = useProjectStats(rollupTasks);
+
+  const deletingSubproject = subProjects.find((p) => p.id === deletingSubprojectId);
 
   if (!project) {
     return (
@@ -45,6 +48,13 @@ export const ProjectOverviewPage = () => {
   const handleDeleteProject = () => {
     deleteProject(project.id);
     navigate('/');
+  };
+
+  const handleConfirmDeleteSubproject = () => {
+    if (deletingSubprojectId) {
+      deleteProject(deletingSubprojectId);
+      setDeletingSubprojectId(null);
+    }
   };
 
   return (
@@ -143,7 +153,7 @@ export const ProjectOverviewPage = () => {
                   key={child.id}
                   project={child}
                   onEdit={onOpenEditProject}
-                  onDelete={deleteProject}
+                  onDelete={(id) => setDeletingSubprojectId(id)}
                   onAddSubproject={(parentId) => onOpenNewProject(parentId)}
                 />
               ))}
@@ -309,6 +319,16 @@ export const ProjectOverviewPage = () => {
         title="Delete Project"
         message={`Are you sure you want to delete "${project.name}"?`}
         confirmText="Delete Project"
+      />
+
+      {/* Delete Sub-Project Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deletingSubprojectId}
+        onClose={() => setDeletingSubprojectId(null)}
+        onConfirm={handleConfirmDeleteSubproject}
+        title="Delete Sub-Project"
+        message={`Are you sure you want to delete sub-project "${deletingSubproject?.name || 'this sub-project'}"?`}
+        confirmText="Delete Sub-Project"
       />
     </div>
   );

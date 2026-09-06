@@ -10,12 +10,28 @@ import { TaskModal } from '../components/tasks/TaskModal';
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
+import { ProjectChecklistSection } from '../components/tasks/ProjectChecklistSection';
 
 export const ProjectTasksPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
-  const { getProject, getProjectTasks, deleteTask, deleteProject } = useWorkspace();
+  const {
+    getProject,
+    getProjectTasks,
+    deleteTask,
+    deleteProject,
+    getProjectTodos,
+    addProjectTodo,
+    toggleProjectTodo,
+    updateProjectTodo,
+    deleteProjectTodo,
+    getProjectTesting,
+    addProjectTesting,
+    toggleProjectTesting,
+    updateProjectTesting,
+    deleteProjectTesting,
+  } = useWorkspace();
 
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'list'
   const [includeSubprojects, setIncludeSubprojects] = useState(false);
@@ -34,6 +50,7 @@ export const ProjectTasksPage = () => {
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState(null);
+  const [deletingChecklistItem, setDeletingChecklistItem] = useState(null);
 
   const project = getProject(projectId);
   const rawTasks = useMemo(() => {
@@ -111,6 +128,17 @@ export const ProjectTasksPage = () => {
     }
   };
 
+  const handleConfirmDeleteChecklist = () => {
+    if (deletingChecklistItem && project) {
+      if (deletingChecklistItem.type === 'todos') {
+        deleteProjectTodo(project.id, deletingChecklistItem.id);
+      } else {
+        deleteProjectTesting(project.id, deletingChecklistItem.id);
+      }
+      setDeletingChecklistItem(null);
+    }
+  };
+
   const handleDeleteProject = () => {
     deleteProject(project.id);
     navigate('/');
@@ -148,8 +176,35 @@ export const ProjectTasksPage = () => {
           totalTasks={filteredTasks.length}
         />
 
-        {/* View Content (Kanban or List) */}
-        <div style={{ marginTop: 'var(--space-4)', flex: 1 }}>
+        {/* To Dos and Testing Checklist Sections */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2-5)', marginTop: 'var(--space-3)' }}>
+          {/* 1. To Dos Section */}
+          <ProjectChecklistSection
+            title="To Dos"
+            type="todos"
+            items={getProjectTodos(project.id)}
+            onAdd={(text) => addProjectTodo(project.id, text)}
+            onToggle={(todoId) => toggleProjectTodo(project.id, todoId)}
+            onUpdate={(todoId, newText) => updateProjectTodo(project.id, todoId, newText)}
+            onDelete={(todoId) => setDeletingChecklistItem({ id: todoId, type: 'todos' })}
+            placeholder="Add a to-do item (e.g. review PR, check schema migration)..."
+          />
+
+          {/* 2. Testing Section */}
+          <ProjectChecklistSection
+            title="Testing"
+            type="testing"
+            items={getProjectTesting(project.id)}
+            onAdd={(text) => addProjectTesting(project.id, text)}
+            onToggle={(testId) => toggleProjectTesting(project.id, testId)}
+            onUpdate={(testId, newText) => updateProjectTesting(project.id, testId, newText)}
+            onDelete={(testId) => setDeletingChecklistItem({ id: testId, type: 'testing' })}
+            placeholder="Add a test case item (e.g. Test cart JSON formatting, Test responsive slider)..."
+          />
+        </div>
+
+        {/* View Content (Current, Later, Done - Kanban or List) */}
+        <div style={{ marginTop: 'var(--space-3)', flex: 1 }}>
           {viewMode === 'kanban' ? (
             <TaskKanbanBoard
               tasks={filteredTasks}
@@ -191,6 +246,16 @@ export const ProjectTasksPage = () => {
         title="Delete Task"
         message="Are you sure you want to delete this task? This action cannot be undone."
         confirmText="Delete Task"
+      />
+
+      {/* Checklist Item Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deletingChecklistItem}
+        onClose={() => setDeletingChecklistItem(null)}
+        onConfirm={handleConfirmDeleteChecklist}
+        title={`Delete ${deletingChecklistItem?.type === 'todos' ? 'To-Do' : 'Testing'} Item`}
+        message={`Are you sure you want to delete this ${deletingChecklistItem?.type === 'todos' ? 'to-do' : 'testing'} item?`}
+        confirmText="Delete Item"
       />
 
       {/* Project Delete Confirmation */}

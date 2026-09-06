@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, CheckCircle2, Circle, CheckSquare, Square } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 import { generateId } from '../../utils/idGenerator';
@@ -28,6 +29,8 @@ export const TaskModal = ({
   const [tagInput, setTagInput] = useState('');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deletingSubtask, setDeletingSubtask] = useState(null);
 
   useEffect(() => {
     if (editingTask) {
@@ -85,8 +88,16 @@ export const TaskModal = ({
     );
   };
 
-  const handleRemoveSubtask = (subId) => {
-    setSubtasks(subtasks.filter((s) => s.id !== subId));
+  const handlePromptRemoveSubtask = (sub) => {
+    setDeletingSubtask(sub);
+  };
+
+  const handleConfirmRemoveSubtask = () => {
+    if (deletingSubtask) {
+      setSubtasks(subtasks.filter((s) => s.id !== deletingSubtask.id));
+      setDeletingSubtask(null);
+      toastSuccess('Subtask removed');
+    }
   };
 
   const handleSubmit = (e) => {
@@ -130,10 +141,11 @@ export const TaskModal = ({
     onClose();
   };
 
-  const handleDelete = () => {
+  const handleConfirmDeleteTask = () => {
     if (editingTask) {
       deleteTask(editingTask.id);
       toastSuccess('Task deleted');
+      setIsDeleteConfirmOpen(false);
       onClose();
     }
   };
@@ -431,7 +443,7 @@ export const TaskModal = ({
                 />
                 <button
                   type="button"
-                  onClick={() => handleRemoveSubtask(sub.id)}
+                  onClick={() => handlePromptRemoveSubtask(sub)}
                   style={{
                     color: '#f43f5e',
                     cursor: 'pointer',
@@ -494,7 +506,7 @@ export const TaskModal = ({
               variant="danger"
               size="sm"
               icon={Trash2}
-              onClick={handleDelete}
+              onClick={() => setIsDeleteConfirmOpen(true)}
               style={{
                 backgroundColor: 'rgba(244, 63, 94, 0.12)',
                 color: '#f43f5e',
@@ -517,6 +529,26 @@ export const TaskModal = ({
           </div>
         </div>
       </form>
+
+      {/* Task Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDeleteTask}
+        title="Delete Task"
+        message={`Are you sure you want to delete task "${editingTask?.title || 'this task'}"? This action cannot be undone.`}
+        confirmText="Delete Task"
+      />
+
+      {/* Subtask Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deletingSubtask}
+        onClose={() => setDeletingSubtask(null)}
+        onConfirm={handleConfirmRemoveSubtask}
+        title="Delete Subtask"
+        message={`Are you sure you want to remove the subtask "${deletingSubtask?.text || 'this subtask'}"?`}
+        confirmText="Delete Subtask"
+      />
     </Modal>
   );
 };

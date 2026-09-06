@@ -13,6 +13,7 @@ import { useProjectStats } from '../hooks/useProjectStats';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { Button } from '../components/common/Button';
 import { StatusBadge, PriorityBadge, TagBadge } from '../components/common/Badge';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 export const DashboardOverviewPage = () => {
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
@@ -20,6 +21,17 @@ export const DashboardOverviewPage = () => {
   const stats = useProjectStats(tasks);
   const rootProjects = getRootProjects();
   const navigate = useNavigate();
+
+  const [deletingProjectId, setDeletingProjectId] = useState(null);
+
+  const deletingProject = projects.find((p) => p.id === deletingProjectId);
+
+  const handleConfirmDeleteProject = () => {
+    if (deletingProjectId) {
+      deleteProject(deletingProjectId);
+      setDeletingProjectId(null);
+    }
+  };
 
   const recentActiveTasks = tasks
     .filter((t) => t.status === 'current' || t.status === 'later')
@@ -133,7 +145,7 @@ export const DashboardOverviewPage = () => {
               key={project.id}
               project={project}
               onEdit={onOpenEditProject}
-              onDelete={deleteProject}
+              onDelete={(id) => setDeletingProjectId(id)}
               onAddSubproject={(parentId) => onOpenNewProject(parentId)}
             />
           ))}
@@ -200,6 +212,16 @@ export const DashboardOverviewPage = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Project Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deletingProjectId}
+        onClose={() => setDeletingProjectId(null)}
+        onConfirm={handleConfirmDeleteProject}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${deletingProject?.name || 'this project'}" and all of its tasks and sub-projects?`}
+        confirmText="Delete Project"
+      />
     </div>
   );
 };

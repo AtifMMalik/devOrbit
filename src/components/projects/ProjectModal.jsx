@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, Palette, Tag, Layers, Check } from 'lucide-react';
+import { Folder, Palette, Tag, Layers, Check, Trash2 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -24,7 +25,7 @@ export const ProjectModal = ({
   initialParentId = null,
   editingProject = null,
 }) => {
-  const { projects, createProject, updateProject, setActiveProjectId } = useWorkspace();
+  const { projects, createProject, updateProject, deleteProject, setActiveProjectId } = useWorkspace();
   const { toastSuccess, toastError } = useToast();
 
   const [name, setName] = useState('');
@@ -33,6 +34,7 @@ export const ProjectModal = ({
   const [color, setColor] = useState('#6366f1');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (editingProject) {
@@ -283,21 +285,58 @@ export const ProjectModal = ({
         <div
           style={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: editingProject ? 'space-between' : 'flex-end',
+            alignItems: 'center',
             gap: 'var(--space-3)',
             marginTop: 'var(--space-3)',
             paddingTop: 'var(--space-4)',
             borderTop: '1px solid var(--border-muted)',
           }}
         >
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary">
-            {editingProject ? 'Save Changes' : 'Create Project'}
-          </Button>
+          {editingProject ? (
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              icon={Trash2}
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              style={{
+                backgroundColor: 'rgba(244, 63, 94, 0.12)',
+                color: '#f43f5e',
+                borderColor: 'rgba(244, 63, 94, 0.3)',
+              }}
+            >
+              Delete Project
+            </Button>
+          ) : null}
+
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              {editingProject ? 'Save Changes' : 'Create Project'}
+            </Button>
+          </div>
         </div>
       </form>
+
+      {/* Delete Project Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          if (editingProject) {
+            deleteProject(editingProject.id);
+            toastSuccess(`Deleted project "${editingProject.name}"`);
+            setIsDeleteConfirmOpen(false);
+            onClose();
+          }
+        }}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${editingProject?.name || 'this project'}" and all associated tasks?`}
+        confirmText="Delete Project"
+      />
     </Modal>
   );
 };

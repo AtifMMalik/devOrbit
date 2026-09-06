@@ -12,6 +12,17 @@ export const INITIAL_SAMPLE_DATA = {
       color: '#0084ff',
       icon: 'Orbit',
       tags: ['react', 'dashboard', 'productivity'],
+      todos: [
+        { id: 'todo_1', text: 'Verify PWA desktop install prompt and offline caching', completed: true },
+        { id: 'todo_2', text: 'Add global keyboard shortcuts modal (? or Cmd+/)', completed: false },
+        { id: 'todo_3', text: 'Benchmark localStorage sync with 500+ tasks', completed: false }
+      ],
+      testing: [
+        { id: 'test_1', text: 'Test responsive grid layout under 768px viewport width', completed: true },
+        { id: 'test_2', text: 'Verify task drag-and-drop between columns and reordering', completed: true },
+        { id: 'test_3', text: 'Test markdown sync import and export with subtask checklists', completed: false },
+        { id: 'test_4', text: 'Verify PWA service worker offline reload fallback', completed: false }
+      ],
       createdAt: '2026-09-01T10:00:00.000Z',
       updatedAt: '2026-09-06T12:00:00.000Z'
     },
@@ -23,6 +34,14 @@ export const INITIAL_SAMPLE_DATA = {
       color: '#06b6d4',
       icon: 'Palette',
       tags: ['css', 'ui/ux', 'tokens'],
+      todos: [
+        { id: 'todo_c1', text: 'Review dark mode contrast for muted text tokens', completed: true },
+        { id: 'todo_c2', text: 'Audit accessible tap targets and keyboard focus rings', completed: false }
+      ],
+      testing: [
+        { id: 'test_c1', text: 'Test theme toggle persistence across browser tabs', completed: true },
+        { id: 'test_c2', text: 'Verify smooth transitions on sidebar collapse', completed: true }
+      ],
       createdAt: '2026-09-02T11:00:00.000Z',
       updatedAt: '2026-09-06T12:30:00.000Z'
     },
@@ -34,6 +53,12 @@ export const INITIAL_SAMPLE_DATA = {
       color: '#10b981',
       icon: 'Database',
       tags: ['storage', 'markdown', 'sync'],
+      todos: [
+        { id: 'todo_s1', text: 'Add schema versioning migration checks on load', completed: true }
+      ],
+      testing: [
+        { id: 'test_s1', text: 'Test JSON export file parsing and restore validation', completed: true }
+      ],
       createdAt: '2026-09-03T09:30:00.000Z',
       updatedAt: '2026-09-06T13:00:00.000Z'
     },
@@ -45,6 +70,17 @@ export const INITIAL_SAMPLE_DATA = {
       color: '#f59e0b',
       icon: 'ShoppingBag',
       tags: ['microservices', 'nextjs', 'golang'],
+      todos: [
+        { id: 'todo_e1', text: 'Limit single user / device from requesting too many OTPs', completed: false },
+        { id: 'todo_e2', text: 'Activate customer grievance management system', completed: false },
+        { id: 'todo_e3', text: 'Restrict customer orders when no delivery partners are available', completed: false }
+      ],
+      testing: [
+        { id: 'test_e1', text: 'Test cart rows are properly displayed as per label and value in JSON', completed: true },
+        { id: 'test_e2', text: 'Test product tags for "AI and New" category filters', completed: true },
+        { id: 'test_e3', text: 'Verify app version header is sent to backend on handshake', completed: false },
+        { id: 'test_e4', text: 'Test continuous unidirectional banner slider animation', completed: false }
+      ],
       createdAt: '2026-08-15T08:00:00.000Z',
       updatedAt: '2026-09-05T16:00:00.000Z'
     },

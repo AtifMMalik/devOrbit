@@ -20,11 +20,13 @@ export const ConfirmDialog = ({
             style={{
               padding: 'var(--space-2)',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--status-blocked-bg)',
-              color: 'var(--status-blocked-text)',
+              backgroundColor: 'rgba(244, 63, 94, 0.12)',
+              color: '#f43f5e',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <AlertTriangle size={20} />
