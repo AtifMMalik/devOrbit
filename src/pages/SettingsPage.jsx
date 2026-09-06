@@ -12,6 +12,7 @@ import {
   Layers,
   Laptop,
   Check,
+  RotateCw,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
@@ -24,8 +25,8 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
   const { theme, setTheme } = useTheme();
-  const { toastSuccess, toastError } = useToast();
-  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const { toastSuccess, toastError, toastInfo } = useToast();
+  const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
   const fileInputRef = useRef(null);
 
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
@@ -172,7 +173,7 @@ export const SettingsPage = () => {
           Install devOrbit directly onto your macOS, Windows, or Linux desktop as a standalone app with offline caching, high-speed launches, and native window framing.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
           {isInstalled ? (
             <div
               style={{
@@ -209,6 +210,17 @@ export const SettingsPage = () => {
               {isInstallable ? 'Install Desktop App' : 'Download Desktop App'}
             </Button>
           )}
+
+          <Button
+            variant="secondary"
+            icon={RotateCw}
+            onClick={() => {
+              toastInfo('Reloading app & refreshing cache...');
+              reloadPWA();
+            }}
+          >
+            {hasUpdate ? 'Update Available — Reload' : 'Reload Application'}
+          </Button>
 
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
             Service Worker: <strong>Active & Cached</strong>

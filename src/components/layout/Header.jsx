@@ -8,6 +8,7 @@ import {
   FolderPlus,
   Laptop,
   Check,
+  RotateCw,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -20,7 +21,7 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
   const { theme, toggleTheme } = useTheme();
   const { projects, tasks, notes, activeProjectId, getProject } = useWorkspace();
   const { toastSuccess, toastInfo } = useToast();
-  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
 
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
 
@@ -174,6 +175,41 @@ export const Header = ({ onOpenSearch, onNewProject }) => {
         >
           New Project
         </Button>
+
+        {/* Reload PWA Button */}
+        <button
+          onClick={() => {
+            toastInfo('Reloading devOrbit...');
+            reloadPWA();
+          }}
+          className="btn-icon"
+          title={hasUpdate ? 'Update available! Click to reload' : 'Reload App & Refresh PWA Cache'}
+          style={{
+            position: 'relative',
+            color: hasUpdate ? 'var(--color-primary)' : 'var(--text-secondary)',
+          }}
+        >
+          <RotateCw
+            size={14}
+            style={{
+              transition: 'transform 0.5s ease',
+              transform: isReloading ? 'rotate(360deg)' : 'none',
+            }}
+          />
+          {hasUpdate && (
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                right: 3,
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-primary)',
+              }}
+            />
+          )}
+        </button>
 
         <button
           onClick={handleExportBackup}

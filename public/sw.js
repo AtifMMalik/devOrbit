@@ -90,3 +90,11 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Message Event: Allow client to force activation on manual reload
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
