@@ -241,6 +241,10 @@ input, textarea, select {
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
+textarea {
+  resize: vertical !important;
+}
+
 input::placeholder, textarea::placeholder {
   color: var(--text-muted);
 }
@@ -304,6 +308,12 @@ input:focus, textarea:focus, select:focus {
   background-color: var(--status-done-bg);
   border: 1px solid var(--status-done-border);
   color: var(--status-done-text);
+}
+
+.badge-status-hotfix {
+  background-color: var(--status-hotfix-bg);
+  border: 1px solid var(--status-hotfix-border);
+  color: var(--status-hotfix-text);
 }
 
 /* Priority Badges */
@@ -420,6 +430,22 @@ details.checklist-section-details summary:hover {
 }
 
 /* ============================================================================
+   Kanban Board Full Viewport Expansion
+   ============================================================================ */
+.task-kanban-board-container {
+  display: flex;
+  width: 100%;
+}
+.task-kanban-board-container > div {
+  flex: 1 1 0;
+  min-width: 240px;
+}
+.task-kanban-column {
+  flex: 1 1 0;
+  width: 100% !important;
+}
+
+/* ============================================================================
    CSS Container Queries (@container maincontent)
    ============================================================================ */
 @container maincontent (max-width: 900px) {
@@ -483,4 +509,184 @@ details.checklist-section-details summary:hover {
     padding: var(--space-3) !important;
   }
 }
+
+/* ============================================================================
+   Markdown Rendered Content Styles
+   ============================================================================ */
+.markdown-rendered-content {
+  font-family: var(--font-sans);
+}
+.markdown-rendered-content .md-h1 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 4px;
+}
+.markdown-rendered-content .md-h2 {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-1-5) 0;
+}
+.markdown-rendered-content .md-h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: var(--space-2) 0 var(--space-1) 0;
+}
+.markdown-rendered-content .md-h4 {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: var(--space-1-5) 0 var(--space-1) 0;
+}
+.markdown-rendered-content .md-hr {
+  border: none;
+  border-top: 1px solid var(--border-default);
+  margin: var(--space-3) 0;
+}
+.markdown-rendered-content .md-quote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: var(--space-3);
+  color: var(--text-secondary);
+  margin: var(--space-2) 0;
+  font-style: italic;
+  background-color: var(--bg-surface-active);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+.markdown-rendered-content .md-inline-code {
+  background-color: var(--bg-surface-active);
+  color: var(--color-primary);
+  padding: 2px 5px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  border: 1px solid var(--border-subtle);
+}
+.markdown-rendered-content .md-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown-rendered-content .md-link:hover {
+  color: var(--color-primary-hover);
+}
+.markdown-rendered-content .md-li {
+  margin-left: var(--space-4);
+  margin-bottom: 2px;
+}
+.markdown-rendered-content .md-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+.markdown-rendered-content .md-checkbox.checked {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.markdown-rendered-content .md-check-icon {
+  color: var(--status-done-solid);
+  font-size: 13px;
+}
+
+/* Fenced Code Block Container */
+.md-code-block-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  margin: var(--space-2-5) 0;
+  overflow: hidden;
+}
+.md-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background-color: var(--bg-card-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+}
+.md-code-lang {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.md-code-copy-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+}
+.md-code-copy-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+.md-code-copy-btn.copied {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+.md-code-block-container pre {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/* Search Query Persistent Highlight */
+mark.search-highlight {
+  background-color: rgba(251, 191, 36, 0.35);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+mark.search-highlight.active-match {
+  background-color: #f59e0b;
+  color: #000000;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px #d97706, 0 0 12px rgba(245, 158, 11, 0.6);
+  border-radius: 3px;
+}
+
+/* Floating Action Button */
+.floating-action-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--color-primary), #0284c7);
+  color: #ffffff;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 24px rgba(0, 132, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.floating-action-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(0, 132, 255, 0.45), 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+.floating-action-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
 

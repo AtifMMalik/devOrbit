@@ -18,6 +18,7 @@ import { useToast } from '../../context/ToastContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { DataSyncProgressModal } from '../common/DataSyncProgressModal';
 import { ProjectAvatar } from '../common/ProjectAvatar';
+import { HeaderSearchBar } from './HeaderSearchBar';
 
 export const Header = ({
   onOpenSearch,
@@ -103,42 +104,7 @@ export const Header = ({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '5px 10px',
-            color: 'var(--text-muted)',
-            fontSize: 'var(--text-xs)',
-            width: isMobile ? 'auto' : '220px',
-            cursor: 'pointer',
-            transition: 'border-color var(--transition-fast)',
-          }}
-          title="Search workspace (Cmd+K)"
-        >
-          <Search size={13} />
-          {!isMobile && <span style={{ flex: 1, textAlign: 'left' }}>Search...</span>}
-          {!isMobile && (
-            <kbd
-              style={{
-                fontSize: '10px',
-                padding: '1px 4px',
-                backgroundColor: 'var(--bg-surface-active)',
-                border: '1px solid var(--border-muted)',
-                borderRadius: 'var(--radius-xs)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              ⌘K
-            </kbd>
-          )}
-        </button>
+        <HeaderSearchBar isMobile={isMobile} />
 
         {activeProject && !isMobile && (
           <div
@@ -203,6 +169,12 @@ export const Header = ({
           size="sm"
           icon={FolderPlus}
           onClick={() => onNewProject(null)}
+          title="Create New Project (⌘⇧N)"
+          style={{
+            backgroundColor: '#6366f1',
+            borderColor: '#4f46e5',
+            color: '#ffffff',
+          }}
         >
           New Project
         </Button>

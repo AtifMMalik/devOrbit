@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Flame } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 
 export const TaskKanbanColumn = ({
   status,
   title,
   tasks = [],
+  selectedTaskIds,
+  onSelectToggle,
   onAddTask,
   onEditTask,
   onDeleteTask,
   onDropTask,
+  onDragStart,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const statusDots = {
+    hotfix: 'var(--status-hotfix-solid)',
     current: 'var(--status-current-solid)',
     later: 'var(--status-later-solid)',
     done: 'var(--status-done-solid)',
@@ -33,20 +37,37 @@ export const TaskKanbanColumn = ({
   const handleDropOnColumn = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    const draggedId = e.dataTransfer.getData('text/plain');
-    if (draggedId && onDropTask) {
-      // Append to the end of this status column
-      onDropTask(draggedId, null, status, 'after');
+    const dragJson = e.dataTransfer.getData('application/json');
+    const plainId = e.dataTransfer.getData('text/plain');
+
+    if (dragJson) {
+      try {
+        const ids = JSON.parse(dragJson);
+        if (Array.isArray(ids) && onDropTask) {
+          onDropTask(ids, null, status, 'after');
+          return;
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+
+    if (plainId && onDropTask) {
+      onDropTask(plainId, null, status, 'after');
     }
   };
 
-  const handleDragStart = (e, taskId) => {
-    e.dataTransfer.setData('text/plain', taskId);
+  const handleDragStartInternal = (e, taskId) => {
+    if (onDragStart) {
+      onDragStart(e, taskId);
+    } else {
+      e.dataTransfer.setData('text/plain', taskId);
+    }
   };
 
-  const handleDropOnTask = (draggedId, targetId, targetStatus, position) => {
+  const handleDropOnTask = (draggedId, targetId, _targetStatus, position) => {
     if (onDropTask) {
-      onDropTask(draggedId, targetId, targetStatus, position);
+      onDropTask(draggedId, targetId, status, position);
     }
   };
 
@@ -57,9 +78,9 @@ export const TaskKanbanColumn = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDropOnColumn}
       style={{
-        flex: '1 1 260px',
+        flex: 1,
+        width: '100%',
         minWidth: '240px',
-        maxWidth: '360px',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: isDragOver ? 'var(--bg-surface-active)' : 'var(--bg-surface)',
@@ -82,15 +103,19 @@ export const TaskKanbanColumn = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)' }}>
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              backgroundColor: dotColor,
-            }}
-          />
-          <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--text-xs)', color: 'var(--text-primary)' }}>
+          {status === 'hotfix' ? (
+            <Flame size={13} style={{ color: 'var(--status-hotfix-solid)' }} />
+          ) : (
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                backgroundColor: dotColor,
+              }}
+            />
+          )}
+          <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--text-xs)', color: status === 'hotfix' ? 'var(--status-hotfix-text)' : 'var(--text-primary)' }}>
             {title}
           </span>
           <span
@@ -130,9 +155,11 @@ export const TaskKanbanColumn = ({
           <TaskCard
             key={task.id}
             task={task}
+            isSelected={selectedTaskIds && selectedTaskIds.has(task.id)}
+            onSelectToggle={onSelectToggle}
             onEdit={onEditTask}
             onDelete={onDeleteTask}
-            onDragStart={handleDragStart}
+            onDragStart={handleDragStartInternal}
             onDropOnTask={handleDropOnTask}
           />
         ))}

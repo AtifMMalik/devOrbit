@@ -1,4 +1,4 @@
-import { generateId } from './idGenerator';
+import { generateId } from './idGenerator.js';
 
 /**
  * Converts a list of tasks for a project into formatted Markdown text.

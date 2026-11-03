@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, LayoutGrid, List, Layers, X } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Search, LayoutGrid, List, Layers, X, Flame } from 'lucide-react';
 
 export const TaskFilterBar = ({
   searchQuery,
@@ -10,6 +10,8 @@ export const TaskFilterBar = ({
   onTagChange,
   priorityFilter,
   onPriorityChange,
+  hotfixFilter = false,
+  onToggleHotfix,
   viewMode,
   onViewModeChange,
   includeSubprojects,
@@ -17,13 +19,18 @@ export const TaskFilterBar = ({
   availableTags = [],
   totalTasks = 0,
 }) => {
-  const hasActiveFilters = searchQuery || statusFilter !== 'all' || tagFilter !== 'all' || priorityFilter !== 'all';
+  const inputRef = useRef(null);
+
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || tagFilter !== 'all' || priorityFilter !== 'all' || hotfixFilter;
 
   const clearFilters = () => {
     onSearchChange('');
     onStatusChange('all');
     onTagChange('all');
     onPriorityChange('all');
+    if (onToggleHotfix && hotfixFilter) {
+      onToggleHotfix();
+    }
   };
 
   return (
@@ -39,8 +46,8 @@ export const TaskFilterBar = ({
     >
       {/* Left side: Search & Filters */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)', flex: 1 }}>
-        {/* Search Input */}
-        <div style={{ position: 'relative', width: '200px' }}>
+        {/* Search Input with Clear 'X' button & Shortcut Hint */}
+        <div style={{ position: 'relative', width: '220px' }}>
           <Search
             size={13}
             style={{
@@ -53,18 +60,43 @@ export const TaskFilterBar = ({
             }}
           />
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Filter tasks..."
+            placeholder="Search tasks (⌘F)..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             style={{
               paddingLeft: 'var(--space-6)',
+              paddingRight: searchQuery ? '24px' : 'var(--space-2)',
               paddingTop: '4px',
               paddingBottom: '4px',
               fontSize: 'var(--text-xs)',
               height: '28px',
+              width: '100%',
             }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              style={{
+                position: 'absolute',
+                right: '6px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Clear search query"
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
 
         {/* Status Filter */}
@@ -74,6 +106,7 @@ export const TaskFilterBar = ({
           style={{ width: 'auto', fontSize: 'var(--text-xs)', height: '28px', padding: '0 var(--space-2)' }}
         >
           <option value="all">Status: All</option>
+          <option value="hotfix">🔥 Hot Fix</option>
           <option value="current">Current</option>
           <option value="later">Later</option>
           <option value="done">Done</option>
@@ -91,6 +124,33 @@ export const TaskFilterBar = ({
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
+
+        {/* Hot Fix Toggle Filter */}
+        {onToggleHotfix && (
+          <button
+            type="button"
+            onClick={onToggleHotfix}
+            style={{
+              height: '28px',
+              padding: '0 var(--space-2-5)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 'var(--text-xs)',
+              backgroundColor: hotfixFilter ? 'rgba(244, 63, 94, 0.15)' : 'transparent',
+              border: `1px solid ${hotfixFilter ? '#f43f5e' : 'var(--border-default)'}`,
+              color: hotfixFilter ? '#f43f5e' : 'var(--text-secondary)',
+              fontWeight: hotfixFilter ? 'bold' : 'normal',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
+            title="Filter by Hot Fix issues"
+          >
+            <Flame size={12} style={{ color: hotfixFilter ? '#f43f5e' : 'var(--text-muted)' }} />
+            <span>Hot Fixes</span>
+          </button>
+        )}
 
         {/* Tag Filter */}
         {availableTags.length > 0 && (

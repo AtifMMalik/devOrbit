@@ -8,6 +8,11 @@ import {
   FileCode,
   ArrowRight,
   TrendingUp,
+  User,
+  Globe,
+  ExternalLink,
+  FileText,
+  Edit3,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProjectStats } from '../hooks/useProjectStats';
@@ -17,6 +22,8 @@ import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
 import { TagBadge, PriorityBadge } from '../components/common/Badge';
+import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
+import { GithubIcon } from '../components/common/Icons';
 import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
 import { generateActivityData } from '../utils/activityGenerator';
 
@@ -122,6 +129,148 @@ export const ProjectOverviewPage = () => {
               {stats.done} <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'normal', color: 'var(--text-muted)' }}>({stats.total} total)</span>
             </div>
           </div>
+        </div>
+
+        {/* Project Links & Author Bar */}
+        {(project.author || project.liveUrl || project.githubUrl || project.description) && (
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-2-5)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                {project.author && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--text-secondary)',
+                      backgroundColor: 'var(--bg-surface-active)',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <User size={13} style={{ color: 'var(--color-primary)' }} />
+                    Author: <strong style={{ color: 'var(--text-primary)' }}>{project.author}</strong>
+                  </span>
+                )}
+
+                {project.liveUrl && (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--color-primary)',
+                      backgroundColor: 'rgba(0, 132, 255, 0.08)',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid rgba(0, 132, 255, 0.25)',
+                      textDecoration: 'none',
+                      fontWeight: 'var(--font-weight-medium)',
+                    }}
+                  >
+                    <Globe size={13} />
+                    Live Site
+                    <ExternalLink size={11} />
+                  </a>
+                )}
+
+                {project.githubUrl && (
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--bg-surface-active)',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-default)',
+                      textDecoration: 'none',
+                      fontWeight: 'var(--font-weight-medium)',
+                    }}
+                  >
+                    <GithubIcon size={13} />
+                    GitHub Repo
+                    <ExternalLink size={11} />
+                  </a>
+                )}
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={Edit3}
+                onClick={() => onOpenEditProject(project)}
+              >
+                Edit Details
+              </Button>
+            </div>
+
+            {project.description && (
+              <p style={{ margin: '4px 0 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                {project.description}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Project README.md Section */}
+        <div
+          className="card"
+          style={{
+            padding: 'var(--space-4) var(--space-5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-3)',
+            backgroundColor: 'var(--bg-surface)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid var(--border-default)',
+              paddingBottom: 'var(--space-2)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FileText size={16} style={{ color: 'var(--color-primary)' }} />
+              <span style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-xs)', color: 'var(--text-primary)' }}>
+                README.md
+              </span>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Edit3}
+              onClick={() => onOpenEditProject(project)}
+            >
+              Edit README
+            </Button>
+          </div>
+
+          <MarkdownRenderer content={project.readme || '# ' + project.name + '\n\nNo README.md documentation added yet. Click "Edit README" above to document your project.'} />
         </div>
 
         {/* Sub-Projects Hierarchy Grid */}
@@ -355,9 +504,9 @@ export const ProjectOverviewPage = () => {
         isOpen={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={handleDeleteProject}
-        title="Delete Project"
-        message={`Are you sure you want to delete "${project.name}"?`}
-        confirmText="Delete Project"
+        title="Move Project to Recycle Bin"
+        message={`Are you sure you want to move "${project.name}" to the Recycle Bin? It can be recovered within 30 days.`}
+        confirmText="Move to Recycle Bin"
       />
 
       {/* Delete Sub-Project Confirmation Dialog */}
@@ -365,9 +514,9 @@ export const ProjectOverviewPage = () => {
         isOpen={!!deletingSubprojectId}
         onClose={() => setDeletingSubprojectId(null)}
         onConfirm={handleConfirmDeleteSubproject}
-        title="Delete Sub-Project"
-        message={`Are you sure you want to delete sub-project "${deletingSubproject?.name || 'this sub-project'}"?`}
-        confirmText="Delete Sub-Project"
+        title="Move Sub-Project to Recycle Bin"
+        message={`Are you sure you want to move sub-project "${deletingSubproject?.name || 'this sub-project'}" to the Recycle Bin? It can be recovered within 30 days.`}
+        confirmText="Move to Recycle Bin"
       />
     </div>
   );

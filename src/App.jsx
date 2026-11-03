@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { AppLayout } from './components/layout/AppLayout';
+import { AppPreloader } from './components/common/AppPreloader';
 import { DashboardOverviewPage } from './pages/DashboardOverviewPage';
 import { ProjectOverviewPage } from './pages/ProjectOverviewPage';
 import { ProjectTasksPage } from './pages/ProjectTasksPage';
@@ -11,19 +12,33 @@ import { ProjectNotesPage } from './pages/ProjectNotesPage';
 import { ProjectAnalyticsPage } from './pages/ProjectAnalyticsPage';
 import { AnalyticsProfilePage } from './pages/AnalyticsProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { CreateProjectPage } from './pages/CreateProjectPage';
+import { CreateTaskPage } from './pages/CreateTaskPage';
 
 export default function App() {
+  const [isPreloading, setIsPreloading] = useState(true);
+
   return (
     <ThemeProvider>
       <ToastProvider>
         <WorkspaceProvider>
+          {isPreloading && <AppPreloader onFinish={() => setIsPreloading(false)} minDuration={2200} />}
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<DashboardOverviewPage />} />
                 <Route path="analytics" element={<AnalyticsProfilePage />} />
+                <Route path="project/new" element={<CreateProjectPage />} />
+                <Route path="project/:projectId/edit" element={<CreateProjectPage />} />
+                <Route path="tasks/new" element={<CreateTaskPage />} />
+                <Route path="tasks/:taskId" element={<CreateTaskPage />} />
+                <Route path="tasks/:taskId/edit" element={<CreateTaskPage />} />
                 <Route path="project/:projectId" element={<Navigate to="tasks" replace />} />
                 <Route path="project/:projectId/tasks" element={<ProjectTasksPage />} />
+                <Route path="project/:projectId/tasks/new" element={<CreateTaskPage />} />
+                <Route path="project/:projectId/tasks/:taskId" element={<CreateTaskPage />} />
+                <Route path="project/:projectId/tasks/:taskId/edit" element={<CreateTaskPage />} />
+                <Route path="project/:projectId/task/:taskId" element={<CreateTaskPage />} />
                 <Route path="project/:projectId/overview" element={<ProjectOverviewPage />} />
                 <Route path="project/:projectId/notes" element={<ProjectNotesPage />} />
                 <Route path="project/:projectId/analytics" element={<ProjectAnalyticsPage />} />

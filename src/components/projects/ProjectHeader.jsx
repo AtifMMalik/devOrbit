@@ -10,10 +10,14 @@ import {
   BookOpen,
   Layers,
   TrendingUp,
+  User,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import { ProjectBreadcrumbs } from './ProjectBreadcrumbs';
 import { ProjectAvatar } from '../common/ProjectAvatar';
 import { Button } from '../common/Button';
+import { GithubIcon } from '../common/Icons';
 
 export const ProjectHeader = ({
   project,
@@ -95,19 +99,81 @@ export const ProjectHeader = ({
 
       {/* Main Project Title & Description */}
       <div style={{ marginBottom: 'var(--space-3)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        {/* Project Logo Row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
           <ProjectAvatar project={project} size={50} showGlow />
-          <div>
-            <h1 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 'var(--font-weight-bold)', lineHeight: 1.2 }}>
-              {project.name}
-            </h1>
-            {project.description && (
-              <p style={{ marginTop: '2px', maxWidth: '750px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-                {project.description}
-              </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 'var(--font-weight-bold)', lineHeight: 1.2 }}>
+                {project.name}
+              </h1>
+              {project.author && (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <User size={11} /> by {project.author}
+                </span>
+              )}
+            </div>
+
+            {(project.liveUrl || project.githubUrl) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                {project.liveUrl && (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--color-primary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                    title="Open Live Deployed Link"
+                  >
+                    <Globe size={11} />
+                    Live Link
+                    <ExternalLink size={9} />
+                  </a>
+                )}
+                {project.githubUrl && (
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--text-secondary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                    title="Open GitHub Repository"
+                  >
+                    <GithubIcon size={11} />
+                    GitHub
+                    <ExternalLink size={9} />
+                  </a>
+                )}
+              </div>
             )}
           </div>
         </div>
+
+        {/* Project Description (Positioned below project logo row) */}
+        {project.description && (
+          <p
+            style={{
+              marginTop: 'var(--space-2-5)',
+              maxWidth: '960px',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.5,
+              margin: 'var(--space-2) 0 0 0',
+            }}
+          >
+            {project.description}
+          </p>
+        )}
       </div>
 
       {/* Navigation Tool Tabs */}

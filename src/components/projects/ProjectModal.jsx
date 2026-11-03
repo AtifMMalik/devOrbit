@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, Trash2, Upload, X } from 'lucide-react';
+import { Check, Trash2, Upload, X, Globe, User, FileText, Eye, Edit3, Pipette } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ProjectAvatar } from '../common/ProjectAvatar';
+import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { GithubIcon } from '../common/Icons';
 import { processProjectLogoFile } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
@@ -32,6 +34,11 @@ export const ProjectModal = ({
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [author, setAuthor] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [readme, setReadme] = useState('');
+  const [readmeTab, setReadmeTab] = useState('edit'); // 'edit' | 'preview'
   const [parentId, setParentId] = useState(initialParentId);
   const [color, setColor] = useState('#6366f1');
   const [logo, setLogo] = useState(null);
@@ -46,6 +53,10 @@ export const ProjectModal = ({
     if (editingProject) {
       setName(editingProject.name || '');
       setDescription(editingProject.description || '');
+      setAuthor(editingProject.author || '');
+      setLiveUrl(editingProject.liveUrl || '');
+      setGithubUrl(editingProject.githubUrl || '');
+      setReadme(editingProject.readme || '');
       setParentId(editingProject.parentId || null);
       setColor(editingProject.color || '#6366f1');
       setLogo(editingProject.logo || null);
@@ -53,6 +64,10 @@ export const ProjectModal = ({
     } else {
       setName('');
       setDescription('');
+      setAuthor('');
+      setLiveUrl('');
+      setGithubUrl('');
+      setReadme('# Project Overview\n\nWelcome to this project. Document architecture, setup instructions, or notes here.');
       setParentId(initialParentId);
       setColor(COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)]);
       setLogo(null);
@@ -110,6 +125,10 @@ export const ProjectModal = ({
       updateProject(editingProject.id, {
         name,
         description,
+        author,
+        liveUrl,
+        githubUrl,
+        readme,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
         logo,
@@ -120,6 +139,10 @@ export const ProjectModal = ({
       const newProj = createProject({
         name,
         description,
+        author,
+        liveUrl,
+        githubUrl,
+        readme,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
         logo,
@@ -150,7 +173,7 @@ export const ProjectModal = ({
           ? 'Add a nested sub-project to organize tasks'
           : 'Create a top-level workspace project'
       }
-      maxWidth="560px"
+      maxWidth="620px"
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         {/* Project Logo / Icon & Visual Preview Banner */}
@@ -309,49 +332,266 @@ export const ProjectModal = ({
             Description
           </label>
           <textarea
-            rows={3}
+            rows={2}
             placeholder="What is the goal and scope of this project?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 
-        {/* Color Palette Picker */}
+        {/* Project Metadata: Author, Live Link, Github Link */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 'var(--space-3)' }}>
+          {/* Author */}
+          <div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-1)',
+              }}
+            >
+              <User size={12} />
+              Author
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Atif Malik, Engineering"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+            />
+          </div>
+
+          {/* Project Live Link */}
+          <div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-1)',
+              }}
+            >
+              <Globe size={12} />
+              Live Link (URL)
+            </label>
+            <input
+              type="url"
+              placeholder="https://myproject.app"
+              value={liveUrl}
+              onChange={(e) => setLiveUrl(e.target.value)}
+            />
+          </div>
+
+          {/* GitHub Repository Link */}
+          <div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-1)',
+              }}
+            >
+              <GithubIcon size={12} />
+              GitHub Link
+            </label>
+            <input
+              type="url"
+              placeholder="https://github.com/..."
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* README.md Markdown Section */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <FileText size={12} />
+              Project README (Markdown)
+            </label>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                type="button"
+                onClick={() => setReadmeTab('edit')}
+                style={{
+                  fontSize: '11px',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-xs)',
+                  backgroundColor: readmeTab === 'edit' ? 'var(--bg-surface-active)' : 'transparent',
+                  color: readmeTab === 'edit' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <Edit3 size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setReadmeTab('preview')}
+                style={{
+                  fontSize: '11px',
+                  padding: '2px 8px',
+                  borderRadius: 'var(--radius-xs)',
+                  backgroundColor: readmeTab === 'preview' ? 'var(--bg-surface-active)' : 'transparent',
+                  color: readmeTab === 'preview' ? 'var(--color-primary)' : 'var(--text-muted)',
+                  border: '1px solid var(--border-subtle)',
+                }}
+              >
+                <Eye size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+                Preview
+              </button>
+            </div>
+          </div>
+
+          {readmeTab === 'edit' ? (
+            <textarea
+              rows={5}
+              placeholder="# Project Architecture & Specifications&#10;&#10;Document specifications, APIs, setup steps..."
+              value={readme}
+              onChange={(e) => setReadme(e.target.value)}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px' }}
+            />
+          ) : (
+            <div
+              style={{
+                minHeight: '110px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                padding: 'var(--space-3)',
+                backgroundColor: 'var(--bg-app)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-default)',
+              }}
+            >
+              <MarkdownRenderer content={readme} />
+            </div>
+          )}
+        </div>
+
+        {/* Color Palette & Custom Color Picker */}
         <div>
           <label
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               fontSize: 'var(--text-xs)',
               fontWeight: 'var(--font-weight-semibold)',
               color: 'var(--text-secondary)',
               marginBottom: 'var(--space-2)',
             }}
           >
-            Accent Color Tone
+            <span>Accent Color Tone</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {color}
+            </span>
           </label>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
             {COLOR_PRESETS.map((preset) => (
               <button
                 key={preset}
                 type="button"
                 onClick={() => setColor(preset)}
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 30,
+                  height: 30,
                   borderRadius: 'var(--radius-full)',
                   backgroundColor: preset,
-                  border: color === preset ? '2px solid #ffffff' : '2px solid transparent',
-                  boxShadow: color === preset ? '0 0 10px ' + preset : 'none',
+                  border: color.toLowerCase() === preset.toLowerCase() ? '2px solid #ffffff' : '2px solid transparent',
+                  boxShadow: color.toLowerCase() === preset.toLowerCase() ? '0 0 10px ' + preset : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   transition: 'transform var(--transition-fast)',
                 }}
+                title={`Preset ${preset}`}
               >
-                {color === preset && <Check size={16} color="#ffffff" />}
+                {color.toLowerCase() === preset.toLowerCase() && <Check size={14} color="#ffffff" />}
               </button>
             ))}
+
+            {/* Custom Color Picker Swatch */}
+            <label
+              style={{
+                position: 'relative',
+                width: 30,
+                height: 30,
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase()) ? color : 'var(--bg-surface-active)',
+                border: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase())
+                  ? '2px solid #ffffff'
+                  : '2px dashed var(--border-active)',
+                boxShadow: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase()) ? '0 0 10px ' + color : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                transition: 'transform var(--transition-fast)',
+              }}
+              title="Pick a custom color"
+            >
+              <input
+                type="color"
+                value={color.startsWith('#') && color.length === 7 ? color : '#6366f1'}
+                onChange={(e) => setColor(e.target.value)}
+                style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  left: '-10px',
+                  width: '50px',
+                  height: '50px',
+                  opacity: 0,
+                  cursor: 'pointer',
+                }}
+              />
+              {!COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase()) ? (
+                <Check size={14} color="#ffffff" />
+              ) : (
+                <Pipette size={14} style={{ color: 'var(--text-secondary)', pointerEvents: 'none' }} />
+              )}
+            </label>
+
+            {/* Direct Hex Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Hex:</span>
+              <input
+                type="text"
+                placeholder="#6366f1"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                style={{
+                  width: '78px',
+                  height: '26px',
+                  padding: '2px 6px',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
+                  borderRadius: 'var(--radius-xs)',
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -433,7 +673,7 @@ export const ProjectModal = ({
                 borderColor: 'rgba(244, 63, 94, 0.3)',
               }}
             >
-              Delete Project
+              Move to Recycle Bin
             </Button>
           ) : null}
 
@@ -455,14 +695,14 @@ export const ProjectModal = ({
         onConfirm={() => {
           if (editingProject) {
             deleteProject(editingProject.id);
-            toastSuccess(`Deleted project "${editingProject.name}"`);
+            toastSuccess(`Moved project "${editingProject.name}" to Recycle Bin`);
             setIsDeleteConfirmOpen(false);
             onClose();
           }
         }}
-        title="Delete Project"
-        message={`Are you sure you want to delete "${editingProject?.name || 'this project'}" and all associated tasks?`}
-        confirmText="Delete Project"
+        title="Move Project to Recycle Bin"
+        message={`Are you sure you want to move "${editingProject?.name || 'this project'}" to the Recycle Bin? It can be recovered within 30 days.`}
+        confirmText="Move to Recycle Bin"
       />
     </Modal>
   );

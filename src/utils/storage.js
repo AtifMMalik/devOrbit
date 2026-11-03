@@ -7,6 +7,8 @@ export const DEFAULT_WORKSPACE_DATA = {
   projects: [],
   tasks: [],
   notes: [],
+  deletedTasks: [],
+  deletedProjects: [],
 };
 
 // Legacy sample IDs and dummy names to purge completely
@@ -127,6 +129,7 @@ function normalizeStatus(rawStatus) {
   if (!rawStatus) return 'current';
   const s = String(rawStatus).toLowerCase().trim();
   if (s === 'done' || s === 'completed' || s === 'finished') return 'done';
+  if (s === 'hotfix' || s === 'hot-fix' || s === 'hot_fix') return 'hotfix';
   if (s === 'later' || s === 'backlog' || s === 'planned' || s === 'queue' || s === 'todo') return 'later';
   return 'current';
 }
@@ -244,6 +247,10 @@ export const sanitizeWorkspaceData = (rawData) => {
       parentId: p.parentId ? String(p.parentId).trim() : null,
       name: pName || 'Untitled Project',
       description: p.description ? String(p.description).trim() : '',
+      author: p.author ? String(p.author).trim() : '',
+      readme: p.readme ? String(p.readme) : '',
+      liveUrl: p.liveUrl ? String(p.liveUrl).trim() : '',
+      githubUrl: p.githubUrl ? String(p.githubUrl).trim() : '',
       color: p.color || '#6366f1',
       logo: typeof p.logo === 'string' && p.logo.trim() ? p.logo.trim() : null,
       icon: p.icon || 'Folder',
@@ -329,7 +336,11 @@ export const sanitizeWorkspaceData = (rawData) => {
       status: normalizeStatus(t.status),
       priority: normalizePriority(t.priority),
       tags: cleanTags.length > 0 ? cleanTags : ['feature'],
-      dueDate: t.dueDate ? String(t.dueDate).trim() : '',
+      dueDate: t.dueDate ? String(t.dueDate).trim() : (t.deadline ? String(t.deadline).trim() : ''),
+      deadline: t.deadline ? String(t.deadline).trim() : (t.dueDate ? String(t.dueDate).trim() : ''),
+      taskPrompt: t.taskPrompt ? String(t.taskPrompt) : '',
+      completionNote: t.completionNote ? String(t.completionNote) : '',
+      isHotfix: Boolean(t.isHotfix || (cleanTags && cleanTags.includes('hotfix'))),
       subtasks: cleanSubtasks,
       createdAt: t.createdAt || new Date().toISOString(),
       updatedAt: t.updatedAt || new Date().toISOString(),
@@ -370,11 +381,97 @@ export const sanitizeWorkspaceData = (rawData) => {
     });
   }
 
+  // 4. Sanitize deletedTasks (Recycle Bin - 30 days retention)
+  const rawDeletedTasks = Array.isArray(rawData.deletedTasks) ? rawData.deletedTasks : [];
+  const cleanDeletedTasks = [];
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  for (const dt of rawDeletedTasks) {
+    if (!dt || typeof dt !== 'object') continue;
+    const deletedAt = dt.deletedAt ? new Date(dt.deletedAt).toISOString() : new Date().toISOString();
+    const deletedTime = new Date(deletedAt).getTime();
+    if (!isNaN(deletedTime) && now - deletedTime > thirtyDaysMs) {
+      // Expired after 30 days, permanently purged
+      continue;
+    }
+
+    let targetProjectId = dt.projectId ? String(dt.projectId).trim() : '';
+    if (idMap.has(targetProjectId)) {
+      targetProjectId = idMap.get(targetProjectId);
+    }
+
+    const dtSubtasks = Array.isArray(dt.subtasks)
+      ? dt.subtasks.map((sub) => ({
+          id: sub.id ? String(sub.id) : generateId('sub'),
+          text: String(sub.text || '').trim(),
+          completed: Boolean(sub.completed),
+        }))
+      : [];
+
+    cleanDeletedTasks.push({
+      id: dt.id ? String(dt.id).trim() : generateId('task'),
+      projectId: targetProjectId,
+      title: dt.title ? String(dt.title).trim() : 'Deleted Task',
+      description: dt.description ? String(dt.description).trim() : '',
+      status: normalizeStatus(dt.status),
+      priority: normalizePriority(dt.priority),
+      tags: Array.isArray(dt.tags) ? dt.tags : ['feature'],
+      dueDate: dt.dueDate ? String(dt.dueDate).trim() : (dt.deadline ? String(dt.deadline).trim() : ''),
+      deadline: dt.deadline ? String(dt.deadline).trim() : (dt.dueDate ? String(dt.dueDate).trim() : ''),
+      taskPrompt: dt.taskPrompt ? String(dt.taskPrompt) : '',
+      completionNote: dt.completionNote ? String(dt.completionNote) : '',
+      isHotfix: Boolean(dt.isHotfix),
+      subtasks: dtSubtasks,
+      createdAt: dt.createdAt || new Date().toISOString(),
+      updatedAt: dt.updatedAt || new Date().toISOString(),
+      deletedAt,
+    });
+  }
+
+  // 5. Sanitize deletedProjects (Recycle Bin - 30 days retention)
+  const rawDeletedProjects = Array.isArray(rawData.deletedProjects) ? rawData.deletedProjects : [];
+  const cleanDeletedProjects = [];
+
+  for (const dp of rawDeletedProjects) {
+    if (!dp || typeof dp !== 'object') continue;
+    const deletedAt = dp.deletedAt ? new Date(dp.deletedAt).toISOString() : new Date().toISOString();
+    const deletedTime = new Date(deletedAt).getTime();
+    if (!isNaN(deletedTime) && now - deletedTime > thirtyDaysMs) {
+      // Expired after 30 days, permanently purged
+      continue;
+    }
+
+    cleanDeletedProjects.push({
+      id: dp.id ? String(dp.id).trim() : generateId('proj'),
+      name: dp.name ? String(dp.name).trim() : 'Deleted Project',
+      description: dp.description ? String(dp.description).trim() : '',
+      author: dp.author ? String(dp.author).trim() : '',
+      liveUrl: dp.liveUrl ? String(dp.liveUrl).trim() : '',
+      githubUrl: dp.githubUrl ? String(dp.githubUrl).trim() : '',
+      readme: dp.readme ? String(dp.readme) : '',
+      color: dp.color ? String(dp.color).trim() : '#0084ff',
+      logo: dp.logo ? String(dp.logo).trim() : null,
+      tags: Array.isArray(dp.tags) ? dp.tags : [],
+      parentId: dp.parentId ? String(dp.parentId).trim() : null,
+      todos: Array.isArray(dp.todos) ? dp.todos : [],
+      testing: Array.isArray(dp.testing) ? dp.testing : [],
+      associatedTasks: Array.isArray(dp.associatedTasks) ? dp.associatedTasks : [],
+      associatedNotes: Array.isArray(dp.associatedNotes) ? dp.associatedNotes : [],
+      childProjects: Array.isArray(dp.childProjects) ? dp.childProjects : [],
+      createdAt: dp.createdAt || new Date().toISOString(),
+      updatedAt: dp.updatedAt || new Date().toISOString(),
+      deletedAt,
+    });
+  }
+
   return {
     version: rawData.version || '1.0.0',
     projects: cleanProjects,
     tasks: cleanTasks,
     notes: cleanNotes,
+    deletedTasks: cleanDeletedTasks,
+    deletedProjects: cleanDeletedProjects,
   };
 };
 
@@ -383,6 +480,9 @@ export const sanitizeWorkspaceData = (rawData) => {
  */
 export const loadWorkspaceData = () => {
   try {
+    if (typeof localStorage === 'undefined') {
+      return DEFAULT_WORKSPACE_DATA;
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       saveWorkspaceData(DEFAULT_WORKSPACE_DATA);
@@ -405,6 +505,9 @@ export const loadWorkspaceData = () => {
  */
 export const saveWorkspaceData = (data) => {
   try {
+    if (typeof localStorage === 'undefined') {
+      return true;
+    }
     const cleanData = sanitizeWorkspaceData(data);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanData));
     return true;
@@ -441,6 +544,7 @@ export const exportWorkspaceJSON = (data) => {
       currentTasksCount,
       laterTasksCount,
       doneTasksCount,
+      deletedTasksCount: (cleanData.deletedTasks || []).length,
       todosCount: totalTodosCount,
       testingCount: totalTestingCount,
       notesCount: cleanData.notes.length,
@@ -448,6 +552,7 @@ export const exportWorkspaceJSON = (data) => {
     projects: cleanData.projects,
     tasks: cleanData.tasks,
     notes: cleanData.notes,
+    deletedTasks: cleanData.deletedTasks || [],
   };
 
   const jsonBlob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -471,3 +576,53 @@ export const resetWorkspaceData = () => {
   saveWorkspaceData(DEFAULT_WORKSPACE_DATA);
   return DEFAULT_WORKSPACE_DATA;
 };
+
+/**
+ * Checks for soft-deleted tasks and projects older than 30 days and removes them permanently.
+ * Returns the purged data and the number of removed items.
+ */
+export const purgeExpiredDeletedItems = (data) => {
+  if (!data) {
+    return { data, purgedCount: 0, purgedTasksCount: 0, purgedProjectsCount: 0 };
+  }
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const rawTasks = Array.isArray(data.deletedTasks) ? data.deletedTasks : [];
+  const initialTasksCount = rawTasks.length;
+  const validTasks = rawTasks.filter((t) => {
+    if (!t || !t.deletedAt) return false;
+    const deletedTime = new Date(t.deletedAt).getTime();
+    return !isNaN(deletedTime) && (now - deletedTime <= thirtyDaysMs);
+  });
+  const purgedTasksCount = initialTasksCount - validTasks.length;
+
+  const rawProjects = Array.isArray(data.deletedProjects) ? data.deletedProjects : [];
+  const initialProjectsCount = rawProjects.length;
+  const validProjects = rawProjects.filter((p) => {
+    if (!p || !p.deletedAt) return false;
+    const deletedTime = new Date(p.deletedAt).getTime();
+    return !isNaN(deletedTime) && (now - deletedTime <= thirtyDaysMs);
+  });
+  const purgedProjectsCount = initialProjectsCount - validProjects.length;
+
+  const totalPurged = purgedTasksCount + purgedProjectsCount;
+  const updatedData = {
+    ...data,
+    deletedTasks: validTasks,
+    deletedProjects: validProjects,
+  };
+
+  if (totalPurged > 0) {
+    saveWorkspaceData(updatedData);
+  }
+
+  return {
+    data: updatedData,
+    purgedCount: totalPurged,
+    purgedTasksCount,
+    purgedProjectsCount,
+  };
+};
+
+export const purgeExpiredDeletedTasks = (data) => purgeExpiredDeletedItems(data);

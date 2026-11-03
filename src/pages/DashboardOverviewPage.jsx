@@ -14,6 +14,7 @@ import { StatusBadge, PriorityBadge, TagBadge } from '../components/common/Badge
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
 import { generateActivityData } from '../utils/activityGenerator';
+import { LandingWelcomeScreen } from '../components/landing/LandingWelcomeScreen';
 
 export const DashboardOverviewPage = () => {
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
@@ -41,6 +42,11 @@ export const DashboardOverviewPage = () => {
     .filter((t) => t.status === 'current' || t.status === 'later')
     .slice(0, 5);
 
+  // If no projects exist yet, display the landing / welcome screen!
+  if (projects.length === 0) {
+    return <LandingWelcomeScreen onNewProject={onOpenNewProject} />;
+  }
+
   return (
     <div className="page-container" style={{ padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
       {/* Top Banner */}
@@ -64,10 +70,16 @@ export const DashboardOverviewPage = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Button
-            variant="secondary"
+            variant="primary"
             size="sm"
             icon={FolderPlus}
             onClick={() => onOpenNewProject(null)}
+            title="Create New Project (⌘⇧N)"
+            style={{
+              backgroundColor: '#6366f1',
+              borderColor: '#4f46e5',
+              color: '#ffffff',
+            }}
           >
             New Project
           </Button>
@@ -76,6 +88,7 @@ export const DashboardOverviewPage = () => {
             size="sm"
             icon={Plus}
             onClick={onOpenNewTask}
+            title="Create New Task (⌘N)"
           >
             New Task
           </Button>
@@ -280,9 +293,9 @@ export const DashboardOverviewPage = () => {
         isOpen={!!deletingProjectId}
         onClose={() => setDeletingProjectId(null)}
         onConfirm={handleConfirmDeleteProject}
-        title="Delete Project"
-        message={`Are you sure you want to delete "${deletingProject?.name || 'this project'}" and all of its tasks and sub-projects?`}
-        confirmText="Delete Project"
+        title="Move Project to Recycle Bin"
+        message={`Are you sure you want to move "${deletingProject?.name || 'this project'}" and all of its tasks to the Recycle Bin? It can be recovered within 30 days.`}
+        confirmText="Move to Recycle Bin"
       />
     </div>
   );

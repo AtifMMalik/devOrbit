@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
   Circle,
@@ -10,17 +11,28 @@ import {
   Trash2,
   Layers,
   GripVertical,
+  Flame,
+  Terminal,
+  Copy,
+  Check,
+  ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 import { StatusBadge, PriorityBadge, TagBadge } from '../common/Badge';
+import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useToast } from '../../context/ToastContext';
 
 export const TaskListView = ({
   tasks = [],
   onEditTask,
   onDeleteTask,
 }) => {
-  const { updateTaskStatus, toggleSubtask, reorderTasks, projects } = useWorkspace();
+  const navigate = useNavigate();
+  const { updateTaskStatus, toggleSubtask, reorderTasks, projects, searchKeyword } = useWorkspace();
+  const { toastSuccess } = useToast();
   const [activeDropTarget, setActiveDropTarget] = useState({ id: null, position: null });
+  const [copiedTaskId, setCopiedTaskId] = useState(null);
 
   if (tasks.length === 0) {
     return (
@@ -66,6 +78,20 @@ export const TaskListView = ({
     }
   };
 
+  const handleCopyPrompt = async (e, promptText, taskId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!promptText) return;
+    try {
+      await navigator.clipboard.writeText(promptText);
+      setCopiedTaskId(taskId);
+      toastSuccess('Prompt copied to clipboard');
+      setTimeout(() => setCopiedTaskId(null), 2000);
+    } catch (err) {
+      // Fallback
+    }
+  };
+
   return (
     <div
       style={{
@@ -76,6 +102,7 @@ export const TaskListView = ({
     >
       {tasks.map((task) => {
         const isDone = task.status === 'done';
+        const isHotfix = Boolean(task.isHotfix || (task.tags && task.tags.includes('hotfix')));
         const project = projects.find((p) => p.id === task.projectId);
         const subtasks = task.subtasks || [];
         const completedSubtasks = subtasks.filter((s) => s.completed).length;
@@ -111,6 +138,12 @@ export const TaskListView = ({
           if (onDeleteTask) onDeleteTask(task.id);
         };
 
+        const handleDoubleClick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate(`/project/${task.projectId}/tasks/${task.id}`);
+        };
+
         return (
           <div key={task.id} style={{ position: 'relative' }}>
             {/* Top drop line indicator */}
@@ -135,10 +168,11 @@ export const TaskListView = ({
               onDragOver={(e) => handleDragOver(e, task.id)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, task.id)}
+              onDoubleClick={handleDoubleClick}
               className="task-details card-hoverable"
               style={{
                 backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)',
+                border: isHotfix ? '1px solid rgba(244, 63, 94, 0.4)' : '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-sm)',
                 overflow: 'hidden',
                 transition: 'border-color var(--transition-fast)',
@@ -186,13 +220,32 @@ export const TaskListView = ({
                       display: 'flex',
                       alignItems: 'center',
                     }}
-                    title="Click to view task details & subtasks"
+                    title="Click to view task details. Double-click to open full task screen."
                   >
                     <ChevronRight size={13} className="task-chevron-icon" />
                   </span>
 
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                      {isHotfix && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            fontSize: '9.5px',
+                            fontWeight: 'bold',
+                            color: '#ffffff',
+                            backgroundColor: '#f43f5e',
+                            padding: '1px 5px',
+                            borderRadius: 'var(--radius-xs)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Flame size={10} />
+                          HOT FIX
+                        </span>
+                      )}
                       <span
                         style={{
                           fontSize: 'var(--text-xs)',
@@ -201,6 +254,7 @@ export const TaskListView = ({
                           textDecoration: isDone ? 'line-through' : 'none',
                         }}
                         className="truncate"
+                        title="Double click to open full task screen"
                       >
                         {task.title}
                       </span>
@@ -226,16 +280,43 @@ export const TaskListView = ({
                   </div>
                 </div>
 
-                {/* Middle: Tags (first 2) */}
-                {task.tags && task.tags.length > 0 && (
-                  <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap', flexShrink: 0 }}>
-                    {task.tags.slice(0, 2).map((t) => (
-                      <TagBadge key={t} tag={t} />
-                    ))}
-                  </div>
-                )}
+                {/* Middle: Prompt pill & Tags */}
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+                  {task.taskPrompt && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyPrompt(e, task.taskPrompt, task.id)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        backgroundColor: 'rgba(0, 132, 255, 0.09)',
+                        border: '1px solid rgba(0, 132, 255, 0.25)',
+                        borderRadius: 'var(--radius-xs)',
+                        padding: '1px 6px',
+                        fontSize: '10.5px',
+                        color: copiedTaskId === task.id ? 'var(--color-success)' : 'var(--color-primary)',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                      title="1-Click Copy Task Prompt"
+                    >
+                      <Terminal size={10} />
+                      {copiedTaskId === task.id ? 'Copied!' : 'Prompt'}
+                      {copiedTaskId === task.id ? <Check size={10} /> : <Copy size={10} />}
+                    </button>
+                  )}
 
-                {/* Right: Subtasks, Due Date, Status, Priority, Edit & Red Delete */}
+                  {task.tags && task.tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap' }}>
+                      {task.tags.slice(0, 2).map((t) => (
+                        <TagBadge key={t} tag={t} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Subtasks, Deadline, Status, Priority, Edit & Red Delete */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
                   {subtasks.length > 0 && (
                     <span
@@ -252,10 +333,22 @@ export const TaskListView = ({
                     </span>
                   )}
 
-                  {task.dueDate && (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {(task.deadline || task.dueDate) && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color:
+                          !isDone && new Date(task.deadline || task.dueDate).getTime() < Date.now()
+                            ? '#f43f5e'
+                            : 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                      title="Deadline"
+                    >
                       <Calendar size={11} />
-                      {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(task.deadline || task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </span>
                   )}
 
@@ -271,7 +364,7 @@ export const TaskListView = ({
                       onClick={handleEditClick}
                       className="btn-icon"
                       style={{ width: 24, height: 24 }}
-                      title="Edit task (opens popup)"
+                      title="Edit task (popup)"
                     >
                       <Edit size={12} />
                     </button>
@@ -280,7 +373,7 @@ export const TaskListView = ({
                       onClick={handleDeleteClick}
                       className="btn-icon btn-icon-danger"
                       style={{ width: 24, height: 24, color: '#f43f5e' }}
-                      title="Delete task"
+                      title="Move task to Recycle Bin"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -301,17 +394,59 @@ export const TaskListView = ({
                 {/* Description */}
                 {task.description && (
                   <div style={{ marginBottom: 'var(--space-2)' }}>
-                    <p
-                      style={{
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.45,
-                        margin: 0,
-                        whiteSpace: 'pre-wrap',
-                      }}
-                    >
-                      {task.description}
-                    </p>
+                    <MarkdownRenderer content={task.description} compact highlight={searchKeyword} />
+                  </div>
+                )}
+
+                {/* Prompt in expanded view */}
+                {task.taskPrompt && (
+                  <div
+                    style={{
+                      marginBottom: 'var(--space-2)',
+                      padding: 'var(--space-2)',
+                      backgroundColor: 'var(--bg-app)',
+                      borderRadius: 'var(--radius-xs)',
+                      border: '1px solid var(--border-default)',
+                      fontSize: '11px',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        Task Prompt Specification
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyPrompt(e, task.taskPrompt, task.id)}
+                        className="btn-icon"
+                        style={{ width: 20, height: 20 }}
+                        title="Copy Prompt"
+                      >
+                        {copiedTaskId === task.id ? <Check size={10} style={{ color: 'var(--color-success)' }} /> : <Copy size={10} />}
+                      </button>
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
+                      {task.taskPrompt}
+                    </div>
+                  </div>
+                )}
+
+                {/* Completion Note */}
+                {task.completionNote && (
+                  <div
+                    style={{
+                      marginBottom: 'var(--space-2)',
+                      padding: 'var(--space-2)',
+                      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px solid rgba(16, 185, 129, 0.25)',
+                      borderRadius: 'var(--radius-xs)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '10.5px', fontWeight: 'bold', color: 'var(--status-done-solid)', marginBottom: 2 }}>
+                      <CheckCircle2 size={11} />
+                      Completion Note:
+                    </div>
+                    <MarkdownRenderer content={task.completionNote} compact highlight={searchKeyword} />
                   </div>
                 )}
 
@@ -358,13 +493,16 @@ export const TaskListView = ({
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
+                              padding: 0,
+                              background: 'none',
+                              border: 'none',
                             }}
                           >
-                            {sub.completed ? <CheckSquare size={13} /> : <Square size={13} />}
+                            {sub.completed ? <CheckSquare size={14} /> : <Square size={14} />}
                           </button>
                           <span
                             style={{
-                              fontSize: '11.5px',
+                              fontSize: '11px',
                               color: sub.completed ? 'var(--text-muted)' : 'var(--text-primary)',
                               textDecoration: sub.completed ? 'line-through' : 'none',
                               flex: 1,
@@ -378,20 +516,27 @@ export const TaskListView = ({
                   </div>
                 )}
 
-                {/* All Tags (if more than 2) */}
-                {task.tags && task.tags.length > 2 && (
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 'var(--space-1-5)' }}>
-                    {task.tags.map((tag) => (
-                      <TagBadge key={tag} tag={tag} />
-                    ))}
-                  </div>
-                )}
-
-                {!task.description && subtasks.length === 0 && (
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    No description or subtasks. Click edit button to add details.
-                  </div>
-                )}
+                {/* Open full screen action */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)', borderTop: '1px solid var(--border-subtle)', paddingTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={handleDoubleClick}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background: 'transparent',
+                      color: 'var(--color-primary)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                    }}
+                    title="Open task detail screen (or double-click row)"
+                  >
+                    Open Full Task Screen
+                    <ExternalLink size={10} />
+                  </button>
+                </div>
               </div>
             </details>
 

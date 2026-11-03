@@ -161,6 +161,11 @@
   --status-done-text: #34d399;
   --status-done-solid: #10b981;
 
+  --status-hotfix-bg: rgba(244, 63, 94, 0.12);
+  --status-hotfix-border: rgba(244, 63, 94, 0.32);
+  --status-hotfix-text: #fb7185;
+  --status-hotfix-solid: #f43f5e;
+
   /* Priority Indicators */
   --priority-urgent-bg: rgba(244, 63, 94, 0.1);
   --priority-urgent-text: #fb7185;
@@ -297,6 +302,11 @@
   --status-done-border: #a7f3d0;
   --status-done-text: #047857;
   --status-done-solid: #10b981;
+
+  --status-hotfix-bg: #ffe4e6;
+  --status-hotfix-border: #fecdd3;
+  --status-hotfix-text: #e11d48;
+  --status-hotfix-solid: #f43f5e;
 
   /* Priority Palette */
   --priority-urgent-bg: #ffe4e6;

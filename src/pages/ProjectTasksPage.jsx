@@ -6,7 +6,6 @@ import { ProjectHeader } from '../components/projects/ProjectHeader';
 import { TaskFilterBar } from '../components/tasks/TaskFilterBar';
 import { TaskKanbanBoard } from '../components/tasks/TaskKanbanBoard';
 import { TaskListView } from '../components/tasks/TaskListView';
-import { TaskModal } from '../components/tasks/TaskModal';
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
@@ -41,12 +40,9 @@ export const ProjectTasksPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [hotfixFilter, setHotfixFilter] = useState(false);
 
   // Modals
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState('current');
-  const [editingTask, setEditingTask] = useState(null);
-
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState(null);
@@ -81,8 +77,18 @@ export const ProjectTasksPage = () => {
       }
 
       // Status
-      if (statusFilter !== 'all' && (task.status || 'backlog').toLowerCase() !== statusFilter) {
-        return false;
+      if (statusFilter !== 'all') {
+        const norm = (task.status || 'current').toLowerCase();
+        const isHot = Boolean(task.isHotfix || (task.tags && task.tags.includes('hotfix')) || norm === 'hotfix');
+        if (statusFilter === 'hotfix') {
+          if (!isHot) return false;
+        } else if (statusFilter === 'current') {
+          if (isHot || norm !== 'current') return false;
+        } else if (statusFilter === 'later') {
+          if (isHot || norm !== 'later') return false;
+        } else if (norm !== statusFilter) {
+          return false;
+        }
       }
 
       // Priority
@@ -95,9 +101,14 @@ export const ProjectTasksPage = () => {
         return false;
       }
 
+      // Hot fix filter
+      if (hotfixFilter && !task.isHotfix && (!task.tags || !task.tags.includes('hotfix'))) {
+        return false;
+      }
+
       return true;
     });
-  }, [rawTasks, searchQuery, statusFilter, priorityFilter, tagFilter]);
+  }, [rawTasks, searchQuery, statusFilter, priorityFilter, tagFilter, hotfixFilter]);
 
   if (!project) {
     return (
@@ -110,15 +121,17 @@ export const ProjectTasksPage = () => {
     );
   }
 
-  const handleOpenAddTask = (defaultStatus = 'current') => {
-    setEditingTask(null);
-    setTaskModalDefaultStatus(defaultStatus);
-    setIsTaskModalOpen(true);
+  const handleOpenAddTask = (defaultStatus = 'current', isHotfix = false) => {
+    navigate(`/project/${projectId}/tasks/new`, {
+      state: { status: defaultStatus, isHotfix },
+    });
   };
 
   const handleOpenEditTask = (task) => {
-    setEditingTask(task);
-    setIsTaskModalOpen(true);
+    const targetTaskId = typeof task === 'string' ? task : task?.id;
+    if (targetTaskId) {
+      navigate(`/project/${projectId}/tasks/${targetTaskId}`);
+    }
   };
 
   const handleDeleteTaskConfirm = () => {
@@ -168,6 +181,8 @@ export const ProjectTasksPage = () => {
           onPriorityChange={setPriorityFilter}
           tagFilter={tagFilter}
           onTagChange={setTagFilter}
+          hotfixFilter={hotfixFilter}
+          onToggleHotfix={() => setHotfixFilter(!hotfixFilter)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           includeSubprojects={includeSubprojects}
@@ -204,7 +219,7 @@ export const ProjectTasksPage = () => {
         </div>
 
         {/* View Content (Current, Later, Done - Kanban or List) */}
-        <div style={{ marginTop: 'var(--space-3)', flex: 1 }}>
+        <div style={{ marginTop: 'var(--space-3)', flex: 1, width: '100%' }}>
           {viewMode === 'kanban' ? (
             <TaskKanbanBoard
               tasks={filteredTasks}
@@ -222,15 +237,6 @@ export const ProjectTasksPage = () => {
         </div>
       </div>
 
-      {/* Task Edit/Create Modal */}
-      <TaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        defaultProjectId={project.id}
-        defaultStatus={taskModalDefaultStatus}
-        editingTask={editingTask}
-      />
-
       {/* Markdown Importer / Exporter */}
       <MarkdownSyncModal
         isOpen={isMarkdownSyncOpen}
@@ -243,9 +249,9 @@ export const ProjectTasksPage = () => {
         isOpen={!!deletingTaskId}
         onClose={() => setDeletingTaskId(null)}
         onConfirm={handleDeleteTaskConfirm}
-        title="Delete Task"
-        message="Are you sure you want to delete this task? This action cannot be undone."
-        confirmText="Delete Task"
+        title="Move Task to Recycle Bin"
+        message="Are you sure you want to move this task to the Recycle Bin? You can recover it anytime within 30 days."
+        confirmText="Move to Recycle Bin"
       />
 
       {/* Checklist Item Delete Confirmation */}

@@ -1,15 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Plus, MoreHorizontal } from 'lucide-react';
+import { Layers, Plus, MoreHorizontal, User, Globe } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useProjectStats } from '../../hooks/useProjectStats';
 import { TagBadge } from '../common/Badge';
 import { ProjectAvatar } from '../common/ProjectAvatar';
+import { GithubIcon } from '../common/Icons';
 
 export const ProjectCard = ({
   project,
   onEdit,
-  onDelete,
   onAddSubproject,
 }) => {
   const navigate = useNavigate();
@@ -88,8 +88,27 @@ export const ProjectCard = ({
           </p>
         )}
 
-        {/* Tags and subproject count */}
+        {/* Tags, links, and subproject count */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)', flexWrap: 'wrap' }}>
+          {project.author && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                fontSize: '10px',
+                color: 'var(--text-muted)',
+                backgroundColor: 'var(--bg-surface-active)',
+                padding: '1px 5px',
+                borderRadius: 'var(--radius-xs)',
+              }}
+              title={`Author: ${project.author}`}
+            >
+              <User size={10} />
+              {project.author}
+            </span>
+          )}
+
           {subProjects.length > 0 && (
             <span
               style={{
@@ -106,6 +125,42 @@ export const ProjectCard = ({
               <Layers size={10} />
               {subProjects.length} sub-{subProjects.length === 1 ? 'project' : 'projects'}
             </span>
+          )}
+
+          {project.liveUrl && (
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                color: 'var(--color-primary)',
+                padding: '1px 4px',
+              }}
+              title="Open Deployed Website"
+            >
+              <Globe size={11} />
+            </a>
+          )}
+
+          {project.githubUrl && (
+            <a
+              href={project.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                color: 'var(--text-secondary)',
+                padding: '1px 4px',
+              }}
+              title="Open GitHub"
+            >
+              <GithubIcon size={11} />
+            </a>
           )}
 
           {project.tags && project.tags.slice(0, 2).map((tag) => (
