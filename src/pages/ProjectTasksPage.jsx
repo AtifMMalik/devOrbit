@@ -1,15 +1,28 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { Plus, FileCode, Trash2 } from 'lucide-react';
+import { Plus, FileCode, Trash2, ListPlus } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ProjectHeader } from '../components/projects/ProjectHeader';
 import { TaskFilterBar } from '../components/tasks/TaskFilterBar';
 import { TaskKanbanBoard } from '../components/tasks/TaskKanbanBoard';
 import { TaskListView } from '../components/tasks/TaskListView';
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
+import { ExportIssuesModal } from '../components/tasks/ExportIssuesModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
+import { BrandFooter } from '../components/common/BrandFooter';
 import { ProjectChecklistSection } from '../components/tasks/ProjectChecklistSection';
+
+const COMMON_LIST_SUGGESTIONS = [
+  'Procedures',
+  'QA & Verification',
+  'Deployment & Release',
+  'Sprint Goals',
+  'Design Review',
+  'Documentation',
+  'Security Audit',
+  'Performance Checklist',
+];
 
 export const ProjectTasksPage = () => {
   const { projectId } = useParams();
@@ -30,6 +43,15 @@ export const ProjectTasksPage = () => {
     toggleProjectTesting,
     updateProjectTesting,
     deleteProjectTesting,
+    getProjectCustomLists,
+    addCustomList,
+    deleteCustomList,
+    addCustomListItem,
+    toggleCustomListItem,
+    updateCustomListItem,
+    deleteCustomListItem,
+    deleteDefaultList,
+    restoreDefaultList,
   } = useWorkspace();
 
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'list'
@@ -44,9 +66,16 @@ export const ProjectTasksPage = () => {
 
   // Modals
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
+  const [isExportIssuesOpen, setIsExportIssuesOpen] = useState(false);
   const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState(null);
   const [deletingChecklistItem, setDeletingChecklistItem] = useState(null);
+  const [deletingList, setDeletingList] = useState(null);
+
+  // Custom List Creator State (Requirement 12)
+  const [isAddingList, setIsAddingList] = useState(false);
+  const [newListTitle, setNewListTitle] = useState('');
+  const [selectedSuggestion, setSelectedSuggestion] = useState('');
 
   const project = getProject(projectId);
   const rawTasks = useMemo(() => {
@@ -145,17 +174,52 @@ export const ProjectTasksPage = () => {
     if (deletingChecklistItem && project) {
       if (deletingChecklistItem.type === 'todos') {
         deleteProjectTodo(project.id, deletingChecklistItem.id);
-      } else {
+      } else if (deletingChecklistItem.type === 'testing') {
         deleteProjectTesting(project.id, deletingChecklistItem.id);
+      } else if (deletingChecklistItem.type === 'custom') {
+        deleteCustomListItem(project.id, deletingChecklistItem.listId, deletingChecklistItem.id);
       }
       setDeletingChecklistItem(null);
     }
+  };
+
+  const handleCreateListSubmit = (e) => {
+    if (e) e.preventDefault();
+    const cleanTitle = (newListTitle || selectedSuggestion).trim();
+    if (!cleanTitle || !project) return;
+
+    if (cleanTitle.toLowerCase() === 'to dos' || cleanTitle.toLowerCase() === 'todos') {
+      restoreDefaultList(project.id, 'todos');
+    } else if (cleanTitle.toLowerCase() === 'testing') {
+      restoreDefaultList(project.id, 'testing');
+    } else {
+      addCustomList(project.id, cleanTitle);
+    }
+
+    setNewListTitle('');
+    setSelectedSuggestion('');
+    setIsAddingList(false);
+  };
+
+  const handleConfirmDeleteList = () => {
+    if (!deletingList || !project) return;
+    if (deletingList.type === 'default') {
+      deleteDefaultList(project.id, deletingList.id);
+    } else {
+      deleteCustomList(project.id, deletingList.id);
+    }
+    setDeletingList(null);
   };
 
   const handleDeleteProject = () => {
     deleteProject(project.id);
     navigate('/');
   };
+
+  const deletedDefaultLists = project.deletedDefaultLists || [];
+  const showTodos = !deletedDefaultLists.includes('todos');
+  const showTesting = !deletedDefaultLists.includes('testing');
+  const customLists = getProjectCustomLists(project.id);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -189,33 +253,149 @@ export const ProjectTasksPage = () => {
           onToggleIncludeSubprojects={() => setIncludeSubprojects(!includeSubprojects)}
           availableTags={availableTags}
           totalTasks={filteredTasks.length}
+          onOpenExport={() => setIsExportIssuesOpen(true)}
         />
 
-        {/* To Dos and Testing Checklist Sections */}
+        {/* Checklists Sections: To Dos, Testing, and Custom Lists (Requirement 12) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2-5)', marginTop: 'var(--space-3)' }}>
-          {/* 1. To Dos Section */}
-          <ProjectChecklistSection
-            title="To Dos"
-            type="todos"
-            items={getProjectTodos(project.id)}
-            onAdd={(text) => addProjectTodo(project.id, text)}
-            onToggle={(todoId) => toggleProjectTodo(project.id, todoId)}
-            onUpdate={(todoId, newText) => updateProjectTodo(project.id, todoId, newText)}
-            onDelete={(todoId) => setDeletingChecklistItem({ id: todoId, type: 'todos' })}
-            placeholder="Add a to-do item (e.g. review PR, check schema migration)..."
-          />
+          {/* 1. To Dos Section (Default - can be deleted) */}
+          {showTodos && (
+            <ProjectChecklistSection
+              title="To Dos"
+              type="todos"
+              items={getProjectTodos(project.id)}
+              onAdd={(text) => addProjectTodo(project.id, text)}
+              onToggle={(todoId) => toggleProjectTodo(project.id, todoId)}
+              onUpdate={(todoId, newText) => updateProjectTodo(project.id, todoId, newText)}
+              onDelete={(todoId) => setDeletingChecklistItem({ id: todoId, type: 'todos' })}
+              onDeleteList={() => setDeletingList({ type: 'default', id: 'todos', title: 'To Dos' })}
+              placeholder="Add a to-do item (e.g. review PR, check schema migration)..."
+            />
+          )}
 
-          {/* 2. Testing Section */}
-          <ProjectChecklistSection
-            title="Testing"
-            type="testing"
-            items={getProjectTesting(project.id)}
-            onAdd={(text) => addProjectTesting(project.id, text)}
-            onToggle={(testId) => toggleProjectTesting(project.id, testId)}
-            onUpdate={(testId, newText) => updateProjectTesting(project.id, testId, newText)}
-            onDelete={(testId) => setDeletingChecklistItem({ id: testId, type: 'testing' })}
-            placeholder="Add a test case item (e.g. Test cart JSON formatting, Test responsive slider)..."
-          />
+          {/* 2. Testing Section (Default - can be deleted) */}
+          {showTesting && (
+            <ProjectChecklistSection
+              title="Testing"
+              type="testing"
+              items={getProjectTesting(project.id)}
+              onAdd={(text) => addProjectTesting(project.id, text)}
+              onToggle={(testId) => toggleProjectTesting(project.id, testId)}
+              onUpdate={(testId, newText) => updateProjectTesting(project.id, testId, newText)}
+              onDelete={(testId) => setDeletingChecklistItem({ id: testId, type: 'testing' })}
+              onDeleteList={() => setDeletingList({ type: 'default', id: 'testing', title: 'Testing' })}
+              placeholder="Add a test case item (e.g. Test cart JSON formatting, Test responsive slider)..."
+            />
+          )}
+
+          {/* 3. Custom Lists (Shown below TODO list and Testing lists - Requirement 12) */}
+          {customLists.map((cl) => (
+            <ProjectChecklistSection
+              key={cl.id}
+              title={cl.title}
+              type="custom"
+              items={cl.items || []}
+              onAdd={(text) => addCustomListItem(project.id, cl.id, text)}
+              onToggle={(itemId) => toggleCustomListItem(project.id, cl.id, itemId)}
+              onUpdate={(itemId, newText) => updateCustomListItem(project.id, cl.id, itemId, newText)}
+              onDelete={(itemId) => setDeletingChecklistItem({ id: itemId, type: 'custom', listId: cl.id })}
+              onDeleteList={() => setDeletingList({ type: 'custom', id: cl.id, title: cl.title })}
+              placeholder={`Add item to ${cl.title}...`}
+            />
+          ))}
+
+          {/* Add Custom List Control with Suggestions Dropdown (Requirement 12) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: '2px' }}>
+            {isAddingList ? (
+              <form
+                onSubmit={handleCreateListSubmit}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)',
+                  flexWrap: 'wrap',
+                  backgroundColor: 'var(--bg-surface)',
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-default)',
+                  width: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: '220px' }}>
+                  <select
+                    value={selectedSuggestion}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedSuggestion(val);
+                      if (val) setNewListTitle(val);
+                    }}
+                    style={{ fontSize: 'var(--text-xs)', padding: '5px 8px', maxWidth: '200px' }}
+                  >
+                    <option value="">Suggestions / Templates...</option>
+                    {!showTodos && <option value="To Dos">To Dos (Default)</option>}
+                    {!showTesting && <option value="Testing">Testing (Default)</option>}
+                    {COMMON_LIST_SUGGESTIONS.map((sug) => (
+                      <option key={sug} value={sug}>
+                        {sug}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="text"
+                    placeholder="List name (e.g. Procedures)..."
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    spellCheck={true}
+                    style={{ fontSize: 'var(--text-xs)', padding: '5px 8px', flex: 1 }}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Button type="submit" variant="primary" size="sm" disabled={!newListTitle.trim() && !selectedSuggestion}>
+                    Create List
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setIsAddingList(false);
+                      setNewListTitle('');
+                      setSelectedSuggestion('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAddingList(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px dashed var(--border-default)',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                <Plus size={14} style={{ color: 'var(--color-primary)' }} />
+                <span>Add List (e.g. Procedures, QA, Deployment)</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* View Content (Current, Later, Done - Kanban or List) */}
@@ -228,12 +408,19 @@ export const ProjectTasksPage = () => {
               onDeleteTask={(taskId) => setDeletingTaskId(taskId)}
             />
           ) : (
-            <TaskListView
-              tasks={filteredTasks}
-              onEditTask={handleOpenEditTask}
-              onDeleteTask={(taskId) => setDeletingTaskId(taskId)}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <TaskListView
+                tasks={filteredTasks}
+                onEditTask={handleOpenEditTask}
+                onDeleteTask={(taskId) => setDeletingTaskId(taskId)}
+              />
+            </div>
           )}
+        </div>
+
+        {/* Brand Footer at end of Workspace screen */}
+        <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)', width: '100%' }}>
+          <BrandFooter />
         </div>
       </div>
 
@@ -242,6 +429,14 @@ export const ProjectTasksPage = () => {
         isOpen={isMarkdownSyncOpen}
         onClose={() => setIsMarkdownSyncOpen(false)}
         project={project}
+      />
+
+      {/* Export / Copy Issues Modal (Markdown & JSON - Requirements 2 & 11) */}
+      <ExportIssuesModal
+        isOpen={isExportIssuesOpen}
+        onClose={() => setIsExportIssuesOpen(false)}
+        currentProject={project}
+        tasks={filteredTasks}
       />
 
       {/* Task Delete Confirmation */}
@@ -259,9 +454,20 @@ export const ProjectTasksPage = () => {
         isOpen={!!deletingChecklistItem}
         onClose={() => setDeletingChecklistItem(null)}
         onConfirm={handleConfirmDeleteChecklist}
-        title={`Delete ${deletingChecklistItem?.type === 'todos' ? 'To-Do' : 'Testing'} Item`}
-        message={`Are you sure you want to delete this ${deletingChecklistItem?.type === 'todos' ? 'to-do' : 'testing'} item?`}
+        title="Delete Checklist Item"
+        message="Are you sure you want to delete this checklist item?"
         confirmText="Delete Item"
+      />
+
+      {/* List Delete Confirmation (Requirement 12) */}
+      <ConfirmDialog
+        isOpen={!!deletingList}
+        onClose={() => setDeletingList(null)}
+        onConfirm={handleConfirmDeleteList}
+        title={`Delete "${deletingList?.title || 'List'}"?`}
+        message={`Are you sure you want to delete the "${deletingList?.title}" list and all of its checklist items?`}
+        confirmText="Delete List"
+        confirmVariant="danger"
       />
 
       {/* Project Delete Confirmation */}

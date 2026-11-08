@@ -8,6 +8,7 @@ import { ProjectProgressChart } from '../components/analytics/ProjectProgressCha
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
+import { BrandFooter } from '../components/common/BrandFooter';
 import { generateActivityData, calculateProjectAnalytics } from '../utils/activityGenerator';
 
 export const ProjectAnalyticsPage = () => {
@@ -153,6 +154,10 @@ export const ProjectAnalyticsPage = () => {
             </div>
           </div>
         )}
+
+        <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)' }}>
+          <BrandFooter />
+        </div>
       </div>
 
       {/* Markdown Sync Modal */}

@@ -689,4 +689,53 @@ mark.search-highlight.active-match {
   transform: translateY(0) scale(0.98);
 }
 
+/* ============================================================================
+   Custom Context Menu Items (Left-Aligned by Default)
+   ============================================================================ */
+.context-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100% !important;
+  transition: background-color var(--transition-fast) !important;
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-surface-active) !important;
+}
+
+/* ============================================================================
+   Word-Style Inline Spell Checking (Underline on the word itself)
+   ============================================================================ */
+.spellcheck-field-container {
+  position: relative;
+  width: 100%;
+}
+
+.spellcheck-underlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  color: transparent;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  user-select: none;
+  word-break: break-word;
+}
+
+.spellcheck-error-wavy {
+  color: transparent !important;
+  background-color: transparent !important;
+  text-decoration: underline wavy #f43f5e !important;
+  text-decoration-thickness: 1.5px !important;
+  text-underline-offset: 3px !important;
+  -webkit-text-decoration: underline wavy #f43f5e !important;
+}
+
+
 

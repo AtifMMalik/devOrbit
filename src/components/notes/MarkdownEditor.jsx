@@ -91,6 +91,7 @@ export const MarkdownEditor = ({
           placeholder="Document Title (e.g. Architecture Overview, API Contracts)"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          spellCheck={true}
           style={{
             maxWidth: '420px',
             fontWeight: 'var(--font-weight-semibold)',
@@ -181,6 +182,7 @@ export const MarkdownEditor = ({
             placeholder="# Write your project architecture, specs, or release logs in Markdown here..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            spellCheck={true}
             style={{
               height: '100%',
               width: '100%',

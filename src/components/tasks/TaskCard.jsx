@@ -27,6 +27,7 @@ export const TaskCard = ({
   task,
   isSelected = false,
   onSelectToggle,
+  onContextMenu,
   onEdit,
   onDelete,
   onDragStart,
@@ -34,7 +35,7 @@ export const TaskCard = ({
   onDropOnTask,
 }) => {
   const navigate = useNavigate();
-  const { updateTask, updateTaskStatus, toggleSubtask, searchKeyword } = useWorkspace();
+  const { updateTask, updateTaskStatus, toggleSubtask, searchKeyword, clipboard } = useWorkspace();
   const { toastSuccess } = useToast();
 
   const [dropIndicator, setDropIndicator] = useState(null); // 'before' | 'after' | null
@@ -42,9 +43,12 @@ export const TaskCard = ({
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [promptDraft, setPromptDraft] = useState(task.taskPrompt || '');
   const [isCopied, setIsCopied] = useState(false);
+  const [isDescCopied, setIsDescCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const isDone = task.status === 'done';
   const isHotfix = Boolean(task.isHotfix || (task.tags && task.tags.includes('hotfix')));
+  const isCut = clipboard?.action === 'cut' && Array.isArray(clipboard?.taskIds) && clipboard.taskIds.includes(task.id);
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter((s) => s.completed).length;
 
@@ -65,12 +69,25 @@ export const TaskCard = ({
   };
 
   const handleCardClick = (e) => {
-    if (e.metaKey || e.ctrlKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (onSelectToggle) {
-        onSelectToggle(e, task.id);
+    if (e.target.closest('button, input, textarea, a')) {
+      return;
+    }
+    if (onSelectToggle) {
+      if (e.metaKey || e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelectToggle(e, task.id, { isMulti: true });
+      } else {
+        onSelectToggle(e, task.id, { isMulti: false });
       }
+    }
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onContextMenu) {
+      onContextMenu(e, task);
     }
   };
 
@@ -91,6 +108,69 @@ export const TaskCard = ({
       setTimeout(() => setIsCopied(false), 2000);
     } catch (_err) {
       // Fallback
+    }
+  };
+
+  const handleCopyDescription = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!task.description) return;
+    try {
+      await navigator.clipboard.writeText(task.description);
+      setIsDescCopied(true);
+      toastSuccess('Description copied to clipboard');
+      setTimeout(() => setIsDescCopied(false), 2000);
+    } catch (_err) {
+      // Fallback
+    }
+  };
+
+  const handleDragStartInternal = (e) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+
+    // Create a crisp, clean drag preview so adjacent or below issues are not captured
+    try {
+      const cardElement = e.currentTarget;
+      const rect = cardElement.getBoundingClientRect();
+      const ghost = cardElement.cloneNode(true);
+      ghost.style.position = 'fixed';
+      ghost.style.top = '-9999px';
+      ghost.style.left = '-9999px';
+      ghost.style.width = `${rect.width}px`;
+      ghost.style.maxWidth = '320px';
+      ghost.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.35)';
+      ghost.style.borderRadius = 'var(--radius-sm)';
+      ghost.style.overflow = 'hidden';
+      ghost.style.zIndex = '99999';
+      ghost.style.pointerEvents = 'none';
+      ghost.style.opacity = '0.92';
+      ghost.style.backgroundColor = 'var(--bg-surface)';
+      ghost.style.border = '1px solid var(--color-primary)';
+
+      document.body.appendChild(ghost);
+      const offsetX = Math.min(Math.max(20, (e.clientX || 0) - rect.left), rect.width - 20);
+      const offsetY = Math.min(Math.max(15, (e.clientY || 0) - rect.top), 40);
+      e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+
+      setTimeout(() => {
+        if (document.body.contains(ghost)) {
+          document.body.removeChild(ghost);
+        }
+      }, 0);
+    } catch (_err) {
+      // Fallback
+    }
+
+    if (onDragStart) {
+      onDragStart(e, task.id);
+    }
+  };
+
+  const handleDragEndInternal = (e) => {
+    setIsDragging(false);
+    if (onDragEnd) {
+      onDragEnd(e);
     }
   };
 
@@ -182,19 +262,28 @@ export const TaskCard = ({
 
       <details
         draggable
-        onDragStart={(e) => onDragStart && onDragStart(e, task.id)}
-        onDragEnd={onDragEnd}
+        onDragStart={handleDragStartInternal}
+        onDragEnd={handleDragEndInternal}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleCardClick}
         onDoubleClick={handleDoubleClick}
+        onContextMenu={handleContextMenu}
+        tabIndex={0}
+        onFocus={() => {
+          if (onSelectToggle) {
+            onSelectToggle(null, task.id, { isMulti: false });
+          }
+        }}
         className="task-details card card-hoverable"
         style={{
           padding: 'var(--space-2-5) var(--space-3)',
           backgroundColor: isSelected ? 'var(--bg-surface-active)' : 'var(--bg-card)',
           borderRadius: 'var(--radius-sm)',
-          border: isSelected
+          border: isCut
+            ? '1.5px dashed var(--color-primary)'
+            : isSelected
             ? '2px solid var(--color-primary)'
             : isHotfix
             ? '1px solid rgba(244, 63, 94, 0.45)'
@@ -204,9 +293,10 @@ export const TaskCard = ({
             : isHotfix
             ? '0 0 8px rgba(244, 63, 94, 0.15)'
             : 'none',
+          opacity: isDragging ? 0.35 : isCut ? 0.55 : 1,
           cursor: 'grab',
           userSelect: 'none',
-          transition: 'border-color var(--transition-fast), background-color var(--transition-fast)',
+          transition: 'border-color var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast)',
         }}
       >
         <summary style={{ outline: 'none' }}>
@@ -250,9 +340,29 @@ export const TaskCard = ({
               <ChevronRight size={13} className="task-chevron-icon" />
             </span>
 
-            {/* Task Title & Hotfix badge */}
+            {/* Task Title & Badges (Hotfix & Cut) */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                {isCut && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      fontSize: '9.5px',
+                      fontWeight: 'bold',
+                      color: 'var(--color-primary)',
+                      backgroundColor: 'rgba(0, 132, 255, 0.12)',
+                      border: '1px dashed var(--color-primary)',
+                      padding: '1px 5px',
+                      borderRadius: 'var(--radius-xs)',
+                      letterSpacing: '0.04em',
+                    }}
+                    title="This task is cut and ready to be pasted elsewhere"
+                  >
+                    CUT
+                  </span>
+                )}
                 {isHotfix && (
                   <span
                     style={{
@@ -491,6 +601,7 @@ export const TaskCard = ({
                     value={promptDraft}
                     onChange={(e) => setPromptDraft(e.target.value)}
                     style={{ width: '100%', fontSize: '11px', fontFamily: 'var(--font-mono)' }}
+                    spellCheck={true}
                   />
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, marginTop: 4 }}>
                     <button
@@ -530,7 +641,48 @@ export const TaskCard = ({
         >
           {/* Rich Text Markdown Description */}
           {task.description && (
-            <div style={{ marginBottom: 'var(--space-2)' }}>
+            <div
+              style={{
+                marginBottom: 'var(--space-2)',
+                padding: 'var(--space-2)',
+                backgroundColor: 'var(--bg-app)',
+                borderRadius: 'var(--radius-xs)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 4,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Description
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyDescription}
+                  className="btn-icon"
+                  style={{ width: 18, height: 18 }}
+                  title="Copy Description"
+                >
+                  {isDescCopied ? (
+                    <Check size={11} style={{ color: 'var(--color-success)' }} />
+                  ) : (
+                    <Copy size={11} />
+                  )}
+                </button>
+              </div>
               <MarkdownRenderer content={task.description} compact highlight={searchKeyword} />
             </div>
           )}

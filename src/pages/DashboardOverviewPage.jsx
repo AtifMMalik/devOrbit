@@ -15,6 +15,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
 import { generateActivityData } from '../utils/activityGenerator';
 import { LandingWelcomeScreen } from '../components/landing/LandingWelcomeScreen';
+import { BrandFooter } from '../components/common/BrandFooter';
 
 export const DashboardOverviewPage = () => {
   const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
@@ -287,6 +288,9 @@ export const DashboardOverviewPage = () => {
           </div>
         </div>
       )}
+
+      {/* Brand Footer at end of home overview screen (Requirement 6) */}
+      <BrandFooter tagline="Orbit your development workflow with clarity and speed" />
 
       {/* Delete Project Confirmation Dialog */}
       <ConfirmDialog

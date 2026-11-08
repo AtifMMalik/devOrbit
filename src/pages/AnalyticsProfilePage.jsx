@@ -11,6 +11,7 @@ import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
 import { OverallProfileStats } from '../components/analytics/OverallProfileStats';
 import { ProjectProgressChart } from '../components/analytics/ProjectProgressChart';
 import { Button } from '../components/common/Button';
+import { BrandFooter } from '../components/common/BrandFooter';
 
 export const AnalyticsProfilePage = () => {
   const { projects, tasks, notes, getRootProjects } = useWorkspace();
@@ -244,6 +245,10 @@ export const AnalyticsProfilePage = () => {
             );
           })}
         </div>
+      </div>
+
+      <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)' }}>
+        <BrandFooter />
       </div>
     </div>
   );

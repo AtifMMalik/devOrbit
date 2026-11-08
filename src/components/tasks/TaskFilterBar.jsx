@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Search, LayoutGrid, List, Layers, X, Flame } from 'lucide-react';
+import { Search, LayoutGrid, List, Layers, X, Flame, FileDown } from 'lucide-react';
 
 export const TaskFilterBar = ({
   searchQuery,
@@ -18,6 +18,7 @@ export const TaskFilterBar = ({
   onToggleIncludeSubprojects,
   availableTags = [],
   totalTasks = 0,
+  onOpenExport,
 }) => {
   const inputRef = useRef(null);
 
@@ -65,6 +66,7 @@ export const TaskFilterBar = ({
             placeholder="Search tasks (⌘F)..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            spellCheck={true}
             style={{
               paddingLeft: 'var(--space-6)',
               paddingRight: searchQuery ? '24px' : 'var(--space-2)',
@@ -205,17 +207,42 @@ export const TaskFilterBar = ({
         )}
       </div>
 
-      {/* Right side: Kanban vs List switcher */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          backgroundColor: 'var(--bg-surface)',
-          padding: '2px',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border-default)',
-        }}
-      >
+      {/* Right side: Export & Kanban vs List switcher */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        {onOpenExport && (
+          <button
+            type="button"
+            onClick={onOpenExport}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 9px',
+              fontSize: 'var(--text-xs)',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
+            title="Export or Copy issues as Markdown or JSON"
+          >
+            <FileDown size={13} style={{ color: 'var(--color-primary)' }} />
+            <span>Export Issues</span>
+          </button>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-surface)',
+            padding: '2px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
         <button
           type="button"
           onClick={() => onViewModeChange('kanban')}
@@ -255,5 +282,6 @@ export const TaskFilterBar = ({
         </button>
       </div>
     </div>
+  </div>
   );
 };

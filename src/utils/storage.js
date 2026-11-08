@@ -7,6 +7,7 @@ export const DEFAULT_WORKSPACE_DATA = {
   projects: [],
   tasks: [],
   notes: [],
+  ideas: [],
   deletedTasks: [],
   deletedProjects: [],
 };
@@ -242,6 +243,31 @@ export const sanitizeWorkspaceData = (rawData) => {
           .filter(Boolean)
       : [];
 
+    // Sanitize custom lists
+    const rawCustomLists = Array.isArray(p.customLists) ? p.customLists : [];
+    const cleanCustomLists = rawCustomLists
+      .filter((cl) => cl && typeof cl === 'object' && String(cl.title || '').trim())
+      .map((cl) => ({
+        id: cl.id ? String(cl.id) : generateId('list'),
+        title: String(cl.title).trim(),
+        type: 'custom',
+        items: Array.isArray(cl.items)
+          ? cl.items
+              .filter((it) => it && typeof it === 'object' && String(it.text || '').trim())
+              .map((it) => ({
+                id: it.id ? String(it.id) : generateId('item'),
+                text: String(it.text).trim(),
+                completed: Boolean(it.completed),
+                createdAt: it.createdAt || new Date().toISOString(),
+              }))
+          : [],
+        createdAt: cl.createdAt || new Date().toISOString(),
+      }));
+
+    const cleanDeletedDefaultLists = Array.isArray(p.deletedDefaultLists)
+      ? p.deletedDefaultLists.map(String)
+      : [];
+
     cleanProjects.push({
       id: assignedId,
       parentId: p.parentId ? String(p.parentId).trim() : null,
@@ -257,6 +283,8 @@ export const sanitizeWorkspaceData = (rawData) => {
       tags: cleanTags,
       todos: cleanTodos,
       testing: cleanTesting,
+      customLists: cleanCustomLists,
+      deletedDefaultLists: cleanDeletedDefaultLists,
       createdAt: p.createdAt || new Date().toISOString(),
       updatedAt: p.updatedAt || new Date().toISOString(),
     });
@@ -465,11 +493,47 @@ export const sanitizeWorkspaceData = (rawData) => {
     });
   }
 
+  // 6. Sanitize project ideas
+  const rawIdeas = Array.isArray(rawData.ideas) ? rawData.ideas : [];
+  const cleanIdeas = [];
+  for (const idea of rawIdeas) {
+    if (!idea || typeof idea !== 'object') continue;
+    const title = idea.title ? String(idea.title).trim() : '';
+    if (!title) continue;
+
+    const ideaTags = Array.isArray(idea.tags)
+      ? idea.tags
+          .map((t) => String(t).replace('#', '').trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    const ideaFeatures = Array.isArray(idea.targetFeatures)
+      ? idea.targetFeatures.map((f) => String(f).trim()).filter(Boolean)
+      : [];
+
+    const validStatuses = ['draft', 'exploring', 'ready', 'converted'];
+    const status = validStatuses.includes(idea.status) ? idea.status : 'draft';
+
+    cleanIdeas.push({
+      id: idea.id ? String(idea.id).trim() : generateId('idea'),
+      title,
+      description: idea.description ? String(idea.description) : '',
+      tags: ideaTags,
+      priority: normalizePriority(idea.priority),
+      status,
+      targetFeatures: ideaFeatures,
+      color: idea.color ? String(idea.color).trim() : '#0084ff',
+      createdAt: idea.createdAt || new Date().toISOString(),
+      updatedAt: idea.updatedAt || new Date().toISOString(),
+    });
+  }
+
   return {
     version: rawData.version || '1.0.0',
     projects: cleanProjects,
     tasks: cleanTasks,
     notes: cleanNotes,
+    ideas: cleanIdeas,
     deletedTasks: cleanDeletedTasks,
     deletedProjects: cleanDeletedProjects,
   };

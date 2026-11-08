@@ -242,6 +242,7 @@ export const HeaderSearchBar = ({ isMobile = false }) => {
             setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
+          spellCheck={true}
           style={{
             background: 'transparent',
             border: 'none',

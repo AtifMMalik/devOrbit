@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, Trash2, Upload, X, Globe, User, FileText, Eye, Edit3, Pipette } from 'lucide-react';
+import { Check, Trash2, Upload, X, Globe, User, FileText, Eye, Edit3, Pipette, ImagePlus } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ProjectAvatar } from '../common/ProjectAvatar';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { GithubIcon } from '../common/Icons';
-import { processProjectLogoFile } from '../../utils/imageUtils';
+import { SpellCheckInput, SpellCheckTextarea } from '../common/SpellCheckField';
+import { RichImageDescriptionEditor } from '../common/RichImageDescriptionEditor';
+import { processProjectLogoFile, processDescriptionImage } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -46,8 +48,11 @@ export const ProjectModal = ({
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [descTab, setDescTab] = useState('edit'); // 'edit' | 'preview'
+  const [isProcessingDescImg, setIsProcessingDescImg] = useState(false);
 
   const fileInputRef = useRef(null);
+  const descImageInputRef = useRef(null);
 
   useEffect(() => {
     if (editingProject) {
@@ -97,6 +102,58 @@ export const ProjectModal = ({
   const handleRemoveLogo = () => {
     setLogo(null);
     toastInfo('Project logo removed');
+  };
+
+  // Directly insert image into Project Description (Requirement 10)
+  const handleInsertDescriptionImage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toastError('Please select a valid image file');
+      return;
+    }
+
+    try {
+      setIsProcessingDescImg(true);
+      const dataUrl = await processDescriptionImage(file);
+      const imageMarkdown = `\n\n![${file.name.replace(/\.[^/.]+$/, '') || 'Project Image'}](${dataUrl})\n\n`;
+      setDescription((prev) => (prev ? prev + imageMarkdown : imageMarkdown.trim()));
+      toastSuccess('Added image to project description');
+    } catch (err) {
+      toastError(err.message || 'Failed to add image');
+    } finally {
+      setIsProcessingDescImg(false);
+      if (descImageInputRef.current) descImageInputRef.current.value = '';
+    }
+  };
+
+  const handleDescImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleInsertDescriptionImage(file);
+  };
+
+  const handleDescriptionPaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleInsertDescriptionImage(file);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleDescriptionDrop = (e) => {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        handleInsertDescriptionImage(file);
+      }
+    }
   };
 
   const handleAddTag = (e) => {
@@ -282,7 +339,7 @@ export const ProjectModal = ({
           >
             Project Name *
           </label>
-          <input
+          <SpellCheckInput
             type="text"
             required
             placeholder="e.g. Mobile App Client, Core API Gateway..."
@@ -318,24 +375,15 @@ export const ProjectModal = ({
           </select>
         </div>
 
-        {/* Description */}
+        {/* Description & Direct Image Addition (Requirement 10 & Normal Image Display) */}
         <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-secondary)',
-              marginBottom: 'var(--space-1)',
-            }}
-          >
-            Description
-          </label>
-          <textarea
-            rows={2}
-            placeholder="What is the goal and scope of this project?"
+          <RichImageDescriptionEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(newVal) => setDescription(newVal)}
+            placeholder="What is the goal and scope of this project? (Supports images via Add Image, paste, or drag & drop)"
+            rows={3}
+            mode={descTab}
+            onModeChange={setDescTab}
           />
         </div>
 
@@ -362,6 +410,7 @@ export const ProjectModal = ({
               placeholder="e.g. Atif Malik, Engineering"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
+              spellCheck={true}
             />
           </div>
 
@@ -470,6 +519,7 @@ export const ProjectModal = ({
               placeholder="# Project Architecture & Specifications&#10;&#10;Document specifications, APIs, setup steps..."
               value={readme}
               onChange={(e) => setReadme(e.target.value)}
+              spellCheck={true}
               style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px' }}
             />
           ) : (
@@ -615,6 +665,7 @@ export const ProjectModal = ({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
+              spellCheck={true}
             />
             {tags.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>

@@ -243,6 +243,7 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            spellCheck={true}
             style={{
               flex: 1,
               border: 'none',

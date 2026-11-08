@@ -7,17 +7,19 @@ import {
   ChevronDown,
   ListTodo,
   FlaskConical,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 
 export const ProjectChecklistSection = ({
-  title, // 'To Dos' | 'Testing'
-  type = 'todos', // 'todos' | 'testing'
+  title, // 'To Dos' | 'Testing' | custom title
+  type = 'todos', // 'todos' | 'testing' | 'custom'
   items = [],
   onAdd,
   onToggle,
   onUpdate,
   onDelete,
+  onDeleteList,
   placeholder = 'Add new item...',
   defaultCollapsed = true,
 }) => {
@@ -37,8 +39,9 @@ export const ProjectChecklistSection = ({
     setInputText('');
   };
 
-  const IconComponent = type === 'testing' ? FlaskConical : ListTodo;
-  const accentColor = type === 'testing' ? 'var(--color-accent)' : 'var(--color-primary)';
+  const IconComponent = type === 'testing' ? FlaskConical : type === 'todos' ? ListTodo : ListChecks;
+  const accentColor = type === 'testing' ? 'var(--color-accent)' : type === 'todos' ? 'var(--color-primary)' : '#8b5cf6';
+  const bgColor = type === 'testing' ? 'rgba(56, 189, 248, 0.12)' : type === 'todos' ? 'rgba(0, 132, 255, 0.12)' : 'rgba(139, 92, 246, 0.12)';
 
   return (
     <details
@@ -75,7 +78,7 @@ export const ProjectChecklistSection = ({
               width: 22,
               height: 22,
               borderRadius: 'var(--radius-xs)',
-              backgroundColor: type === 'testing' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 132, 255, 0.12)',
+              backgroundColor: bgColor,
               color: accentColor,
               display: 'flex',
               alignItems: 'center',
@@ -114,16 +117,34 @@ export const ProjectChecklistSection = ({
           </h3>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            color: 'var(--text-muted)',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform var(--transition-fast)',
-          }}
-        >
-          <ChevronDown size={15} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          {onDeleteList && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDeleteList();
+              }}
+              className="btn-icon btn-icon-danger"
+              style={{ width: 22, height: 22, color: 'var(--text-muted)' }}
+              title={`Delete "${title}" list`}
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              color: 'var(--text-muted)',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform var(--transition-fast)',
+            }}
+          >
+            <ChevronDown size={15} />
+          </div>
         </div>
       </summary>
 
@@ -152,6 +173,7 @@ export const ProjectChecklistSection = ({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={placeholder}
+            spellCheck={true}
             style={{
               flex: 1,
               fontSize: 'var(--text-xs)',
@@ -167,22 +189,20 @@ export const ProjectChecklistSection = ({
             size="sm"
             icon={Plus}
             disabled={!inputText.trim()}
-            style={{ flexShrink: 0, padding: '5px 10px' }}
           >
             Add
           </Button>
         </form>
 
-        {/* Checklist Items */}
+        {/* Checklist Item List */}
         {items.length > 0 && (
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 3,
-              maxHeight: '240px',
+              gap: 2,
+              maxHeight: '360px',
               overflowY: 'auto',
-              paddingRight: 2,
             }}
           >
             {items.map((item) => (
@@ -193,10 +213,9 @@ export const ProjectChecklistSection = ({
                   alignItems: 'center',
                   gap: 'var(--space-2)',
                   padding: '4px 8px',
-                  backgroundColor: 'var(--bg-card)',
                   borderRadius: 'var(--radius-xs)',
+                  backgroundColor: 'var(--bg-app)',
                   border: '1px solid var(--border-subtle)',
-                  width: '100%',
                   boxSizing: 'border-box',
                   transition: 'background-color var(--transition-fast)',
                 }}
@@ -230,6 +249,7 @@ export const ProjectChecklistSection = ({
                   value={item.text}
                   onChange={(e) => onUpdate(item.id, e.target.value)}
                   placeholder="Checklist item description..."
+                  spellCheck={true}
                   style={{
                     flex: 1,
                     fontSize: 'var(--text-xs)',

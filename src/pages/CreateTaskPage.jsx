@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,13 +17,20 @@ import {
   CheckCircle2,
   ChevronUp,
   ChevronDown,
+  Sparkles,
+  ImagePlus,
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { StatusBadge, PriorityBadge } from '../components/common/Badge';
+import { BrandFooter } from '../components/common/BrandFooter';
+import { SpellCheckInput, SpellCheckTextarea } from '../components/common/SpellCheckField';
+import { RichImageDescriptionEditor } from '../components/common/RichImageDescriptionEditor';
+import { processDescriptionImage } from '../utils/imageUtils';
 import { generateId } from '../utils/idGenerator';
 import { highlightText, cycleOnPageMatch } from '../utils/searchHighlight';
+import { formatSingleTaskToMarkdown } from '../utils/issueExporter';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
 
@@ -87,8 +94,16 @@ export const CreateTaskPage = () => {
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [descMode, setDescMode] = useState('edit');
   const [isCopied, setIsCopied] = useState(false);
+  const [isDescCopied, setIsDescCopied] = useState(false);
+  const [isTaskCopied, setIsTaskCopied] = useState(false);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isUnsavedConfirmOpen, setIsUnsavedConfirmOpen] = useState(false);
+  const [isProcessingDescImg, setIsProcessingDescImg] = useState(false);
+  const descImageInputRef = useRef(null);
+
+  // Baseline task values for dirty checking (Requirement 1)
+  const initialTaskValuesRef = useRef(null);
 
   // In-page search navigation state
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
@@ -97,21 +112,111 @@ export const CreateTaskPage = () => {
   // Load existing task when editing
   useEffect(() => {
     if (existingTask) {
-      setProjectId(existingTask.projectId || defaultProjectId);
-      setTitle(existingTask.title || '');
-      setDescription(existingTask.description || '');
-      setTaskPrompt(existingTask.taskPrompt || '');
-      setStatus(existingTask.status || 'current');
-      setPriority(existingTask.priority || 'medium');
-      setDeadline(existingTask.deadline || existingTask.dueDate || '');
-      setCompletionNote(existingTask.completionNote || '');
-      setIsHotfix(Boolean(existingTask.isHotfix || (existingTask.tags && existingTask.tags.includes('hotfix'))));
-      setTags(existingTask.tags || []);
-      setSubtasks(existingTask.subtasks || []);
+      const pId = existingTask.projectId || defaultProjectId;
+      const tTitle = existingTask.title || '';
+      const tDesc = existingTask.description || '';
+      const tPrompt = existingTask.taskPrompt || '';
+      const tStatus = existingTask.status || 'current';
+      const tPriority = existingTask.priority || 'medium';
+      const tDeadline = existingTask.deadline || existingTask.dueDate || '';
+      const tNote = existingTask.completionNote || '';
+      const tHotfix = Boolean(existingTask.isHotfix || (existingTask.tags && existingTask.tags.includes('hotfix')));
+      const tTags = existingTask.tags || [];
+      const tSubtasks = existingTask.subtasks || [];
+
+      setProjectId(pId);
+      setTitle(tTitle);
+      setDescription(tDesc);
+      setTaskPrompt(tPrompt);
+      setStatus(tStatus);
+      setPriority(tPriority);
+      setDeadline(tDeadline);
+      setCompletionNote(tNote);
+      setIsHotfix(tHotfix);
+      setTags(tTags);
+      setSubtasks(tSubtasks);
+
+      if (!initialTaskValuesRef.current) {
+        initialTaskValuesRef.current = {
+          projectId: pId,
+          title: tTitle,
+          description: tDesc,
+          taskPrompt: tPrompt,
+          status: tStatus,
+          priority: tPriority,
+          deadline: tDeadline,
+          completionNote: tNote,
+          isHotfix: tHotfix,
+          tags: tTags,
+          subtasks: tSubtasks,
+        };
+      }
     }
   }, [existingTask, defaultProjectId]);
 
+  // Compute if the form has unsaved edits in edit mode (Requirement 1)
+  const isDirty = useMemo(() => {
+    if (!isEditing || !initialTaskValuesRef.current) return false;
+    const initial = initialTaskValuesRef.current;
+    if (projectId !== initial.projectId) return true;
+    if (title.trim() !== initial.title.trim()) return true;
+    if (description.trim() !== initial.description.trim()) return true;
+    if (taskPrompt.trim() !== initial.taskPrompt.trim()) return true;
+    if (status !== initial.status) return true;
+    if (priority !== initial.priority) return true;
+    if (deadline !== initial.deadline) return true;
+    if (completionNote.trim() !== initial.completionNote.trim()) return true;
+    if (isHotfix !== initial.isHotfix) return true;
+    if (JSON.stringify(tags) !== JSON.stringify(initial.tags)) return true;
+    if (JSON.stringify(subtasks) !== JSON.stringify(initial.subtasks)) return true;
+    return false;
+  }, [isEditing, projectId, title, description, taskPrompt, status, priority, deadline, completionNote, isHotfix, tags, subtasks]);
+
+  // History & gesture guard refs for Requirement 1 (Intercept mouse gesture & browser back button when isDirty)
+  const bypassGuardRef = useRef(false);
+  const guardPushedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isEditing || !isDirty) {
+      guardPushedRef.current = false;
+      return;
+    }
+
+    // Push dummy history entry once when editing becomes dirty so browser back / swipe pops this entry
+    if (!guardPushedRef.current) {
+      window.history.pushState({ devorbitTaskGuard: true }, '', window.location.href);
+      guardPushedRef.current = true;
+    }
+
+    const handlePopState = () => {
+      if (bypassGuardRef.current) {
+        return;
+      }
+      // Re-push state to keep user on the page and preserve guard
+      window.history.pushState({ devorbitTaskGuard: true }, '', window.location.href);
+      setIsUnsavedConfirmOpen(true);
+    };
+
+    const handleBeforeUnload = (e) => {
+      if (bypassGuardRef.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isEditing, isDirty]);
+
   // Auto-restore draft from localStorage ONLY when creating a new task
+  // FIX FOR REQUIREMENT 9:
+  // If navigation explicitly targeted a status (e.g. + Add Task on Later/Hotfix column),
+  // preserve that intended list instead of overriding with old draft status!
   useEffect(() => {
     if (isEditing) return;
     try {
@@ -123,10 +228,18 @@ export const CreateTaskPage = () => {
           if (parsed.title) setTitle(parsed.title);
           if (parsed.description) setDescription(parsed.description);
           if (parsed.taskPrompt) setTaskPrompt(parsed.taskPrompt);
-          if (parsed.status) setStatus(parsed.status);
+
+          if (location.state?.status) {
+            setStatus(location.state.status);
+            const hotfixFromNav = Boolean(location.state.isHotfix || location.state.status === 'hotfix');
+            setIsHotfix(hotfixFromNav);
+          } else if (parsed.status) {
+            setStatus(parsed.status);
+            if (parsed.isHotfix !== undefined) setIsHotfix(parsed.isHotfix);
+          }
+
           if (parsed.priority) setPriority(parsed.priority);
           if (parsed.deadline) setDeadline(parsed.deadline);
-          if (parsed.isHotfix !== undefined) setIsHotfix(parsed.isHotfix);
           if (Array.isArray(parsed.tags)) setTags(parsed.tags);
           if (Array.isArray(parsed.subtasks)) setSubtasks(parsed.subtasks);
           setHasRestoredDraft(true);
@@ -135,7 +248,7 @@ export const CreateTaskPage = () => {
     } catch (_e) {
       // Ignore
     }
-  }, [isEditing]);
+  }, [isEditing, location.state]);
 
   // Auto-save form as draft on change ONLY when creating a new task
   useEffect(() => {
@@ -240,6 +353,27 @@ export const CreateTaskPage = () => {
     }
   };
 
+  const handleBackNavigation = () => {
+    if (isEditing && isDirty) {
+      setIsUnsavedConfirmOpen(true);
+    } else {
+      bypassGuardRef.current = true;
+      navigate(projectId ? `/project/${projectId}/tasks` : -1);
+    }
+  };
+
+  const handleDiscardChangesAndLeave = () => {
+    bypassGuardRef.current = true;
+    setIsUnsavedConfirmOpen(false);
+    navigate(projectId ? `/project/${projectId}/tasks` : -1);
+  };
+
+  const handleSaveAndLeave = (e) => {
+    bypassGuardRef.current = true;
+    setIsUnsavedConfirmOpen(false);
+    handleSubmit(e);
+  };
+
   const handleCopyPrompt = async () => {
     if (!taskPrompt) return;
     try {
@@ -247,6 +381,99 @@ export const CreateTaskPage = () => {
       setIsCopied(true);
       toastSuccess('Task prompt copied to clipboard');
       setTimeout(() => setIsCopied(false), 2000);
+    } catch (_err) {
+      // Fallback
+    }
+  };
+
+  const handleCopyDescription = async () => {
+    if (!description) {
+      toastInfo('No description to copy');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(description);
+      setIsDescCopied(true);
+      toastSuccess('Task description copied to clipboard');
+      setTimeout(() => setIsDescCopied(false), 2000);
+    } catch (_err) {
+      // Fallback
+    }
+  };
+
+  // Directly insert image into issue description (Item 3)
+  const handleInsertDescriptionImage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toastError('Please select a valid image file');
+      return;
+    }
+
+    try {
+      setIsProcessingDescImg(true);
+      const dataUrl = await processDescriptionImage(file);
+      const cleanName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'Issue Image';
+      const imageMarkdown = `\n\n![${cleanName}](${dataUrl})\n\n`;
+      setDescription((prev) => (prev ? prev + imageMarkdown : imageMarkdown.trim()));
+      toastSuccess('Added image to issue description');
+    } catch (err) {
+      toastError(err.message || 'Failed to add image');
+    } finally {
+      setIsProcessingDescImg(false);
+      if (descImageInputRef.current) descImageInputRef.current.value = '';
+    }
+  };
+
+  const handleDescImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleInsertDescriptionImage(file);
+  };
+
+  const handleDescriptionPaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleInsertDescriptionImage(file);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleDescriptionDrop = (e) => {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        handleInsertDescriptionImage(file);
+      }
+    }
+  };
+
+  const handleCopyWholeTask = async () => {
+    const taskData = {
+      title,
+      description,
+      taskPrompt,
+      status,
+      priority,
+      tags,
+      subtasks,
+    };
+    const md = formatSingleTaskToMarkdown(taskData);
+    if (!md) {
+      toastInfo('No task content to copy');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(md);
+      setIsTaskCopied(true);
+      toastSuccess('Task copied to clipboard as Markdown');
+      setTimeout(() => setIsTaskCopied(false), 2000);
     } catch (_err) {
       // Fallback
     }
@@ -289,6 +516,7 @@ export const CreateTaskPage = () => {
 
   const handleDeleteTask = () => {
     if (!existingTask) return;
+    bypassGuardRef.current = true;
     deleteTask(existingTask.id);
     toastSuccess('Task moved to Recycle Bin');
     navigate(`/project/${projectId || existingTask.projectId}/tasks`);
@@ -319,6 +547,8 @@ export const CreateTaskPage = () => {
       tags: isHotfix && !tags.includes('hotfix') ? [...tags, 'hotfix'] : tags,
       subtasks,
     };
+
+    bypassGuardRef.current = true;
 
     if (isEditing && existingTask) {
       const wasDone = existingTask.status === 'done';
@@ -384,7 +614,7 @@ export const CreateTaskPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <button
             type="button"
-            onClick={() => navigate(projectId ? `/project/${projectId}/tasks` : -1)}
+            onClick={handleBackNavigation}
             className="btn-icon"
             style={{ width: 32, height: 32 }}
             title="Go Back"
@@ -404,6 +634,18 @@ export const CreateTaskPage = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          {/* Copy Task button inside edit / create task screen (Requirement 2) */}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            icon={isTaskCopied ? Check : Copy}
+            onClick={handleCopyWholeTask}
+            title="Copy whole task to clipboard as Markdown"
+          >
+            {isTaskCopied ? 'Copied Task!' : 'Copy Task'}
+          </Button>
+
           {isEditing && (
             <Button
               type="button"
@@ -425,7 +667,7 @@ export const CreateTaskPage = () => {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => navigate(projectId ? `/project/${projectId}/tasks` : -1)}
+            onClick={handleBackNavigation}
           >
             Cancel
           </Button>
@@ -653,7 +895,7 @@ export const CreateTaskPage = () => {
           <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)' }}>
             Task Title <span style={{ color: '#f43f5e' }}>*</span>
           </label>
-          <input
+          <SpellCheckInput
             type="text"
             placeholder="e.g. Implement resilient WebSocket connection retry logic..."
             value={title}
@@ -672,7 +914,28 @@ export const CreateTaskPage = () => {
           )}
         </div>
 
-        {/* Task Prompt Box */}
+        {/* Task Description (Edit / Preview) - Requirement 5 & Normal Visual Image Display */}
+        <div
+          className="card"
+          style={{
+            padding: 'var(--space-4) var(--space-5)',
+            backgroundColor: 'var(--bg-surface)',
+          }}
+        >
+          <RichImageDescriptionEditor
+            value={description}
+            onChange={(newVal) => setDescription(newVal)}
+            placeholder="Write detailed acceptance criteria, technical approach, code blocks (```js), and bullet points (paste or drag & drop images)..."
+            rows={8}
+            mode={descMode}
+            onModeChange={setDescMode}
+            onCopy={handleCopyDescription}
+            isCopied={isDescCopied}
+            highlight={searchKeyword}
+          />
+        </div>
+
+        {/* Task Prompt Box - Requirement 5 & 8 */}
         <div
           className="card"
           style={{
@@ -683,7 +946,7 @@ export const CreateTaskPage = () => {
             backgroundColor: 'var(--bg-surface)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Terminal size={15} style={{ color: 'var(--color-primary)' }} />
               <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
@@ -691,21 +954,37 @@ export const CreateTaskPage = () => {
               </span>
             </div>
 
-            {taskPrompt && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              {/* AI prompt generate button - Requirement 8 (disabled for now) */}
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                icon={isCopied ? Check : Copy}
-                onClick={handleCopyPrompt}
-                title="1-click copy prompt to clipboard"
+                icon={Sparkles}
+                disabled={true}
+                title="Generate prompt using AI (Currently disabled until backend is added)"
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
               >
-                {isCopied ? 'Copied!' : 'Copy Prompt'}
+                Generate with AI
               </Button>
-            )}
+
+              {/* Copy prompt button - Requirement 4 */}
+              {taskPrompt && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  icon={isCopied ? Check : Copy}
+                  onClick={handleCopyPrompt}
+                  title="1-click copy prompt to clipboard"
+                >
+                  {isCopied ? 'Copied!' : 'Copy Prompt'}
+                </Button>
+              )}
+            </div>
           </div>
 
-          <textarea
+          <SpellCheckTextarea
             rows={4}
             placeholder="Write the exact LLM prompt, technical specifications, or requirements for this task..."
             value={taskPrompt}
@@ -729,88 +1008,6 @@ export const CreateTaskPage = () => {
           <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
             One-click copyable from task cards on the Kanban board for fast pairing.
           </p>
-        </div>
-
-        {/* Markdown Task Description (Edit / Preview) */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-4) var(--space-5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-3)',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 'var(--space-2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <FileText size={15} style={{ color: 'var(--color-primary)' }} />
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-                Description (Markdown)
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button
-                type="button"
-                onClick={() => setDescMode('edit')}
-                style={{
-                  fontSize: '11px',
-                  padding: '3px 8px',
-                  borderRadius: 'var(--radius-xs)',
-                  backgroundColor: descMode === 'edit' ? 'var(--bg-surface-active)' : 'transparent',
-                  color: descMode === 'edit' ? 'var(--color-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Edit3 size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setDescMode('preview')}
-                style={{
-                  fontSize: '11px',
-                  padding: '3px 8px',
-                  borderRadius: 'var(--radius-xs)',
-                  backgroundColor: descMode === 'preview' ? 'var(--bg-surface-active)' : 'transparent',
-                  color: descMode === 'preview' ? 'var(--color-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                }}
-              >
-                <Eye size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                Preview
-              </button>
-            </div>
-          </div>
-
-          {descMode === 'edit' ? (
-            <textarea
-              rows={8}
-              placeholder="Write detailed acceptance criteria, technical approach, code blocks (```js), and bullet points..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                lineHeight: 1.5,
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                padding: 'var(--space-4)',
-                backgroundColor: 'var(--bg-app)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-default)',
-                minHeight: '140px',
-              }}
-            >
-              <MarkdownRenderer content={description || '*No description written yet.*'} highlight={searchKeyword} />
-            </div>
-          )}
         </div>
 
         {/* Subtasks Checklist */}
@@ -873,19 +1070,21 @@ export const CreateTaskPage = () => {
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <input
-              type="text"
-              placeholder="Add acceptance subtask (e.g. Unit test edge cases)..."
-              value={newSubtaskText}
-              onChange={(e) => setNewSubtaskText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSubtask();
-                }
-              }}
-              style={{ fontSize: 'var(--text-xs)' }}
-            />
+            <div style={{ flex: 1 }}>
+              <SpellCheckInput
+                type="text"
+                placeholder="Add acceptance subtask (e.g. Unit test edge cases)..."
+                value={newSubtaskText}
+                onChange={(e) => setNewSubtaskText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+                style={{ fontSize: 'var(--text-xs)' }}
+              />
+            </div>
             <Button type="button" variant="secondary" size="sm" onClick={handleAddSubtask}>
               Add
             </Button>
@@ -912,7 +1111,7 @@ export const CreateTaskPage = () => {
               </span>
             </div>
 
-            <textarea
+            <SpellCheckTextarea
               rows={3}
               placeholder="Sign-off notes, PR links, deployment commit hash, or post-mortem notes..."
               value={completionNote}
@@ -999,6 +1198,7 @@ export const CreateTaskPage = () => {
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={handleAddTag}
+            spellCheck={true}
           />
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -1055,19 +1255,33 @@ export const CreateTaskPage = () => {
         </div>
 
         {/* Bottom Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', paddingBottom: 'var(--space-8)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', paddingBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
           <Button
             type="button"
             variant="secondary"
-            onClick={() => navigate(projectId ? `/project/${projectId}/tasks` : -1)}
+            icon={isTaskCopied ? Check : Copy}
+            onClick={handleCopyWholeTask}
+            title="Copy whole task to clipboard as Markdown"
+          >
+            {isTaskCopied ? 'Copied Task!' : 'Copy Task'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleBackNavigation}
           >
             Cancel
           </Button>
+
           <Button type="submit" variant="primary" icon={Save} title="Save Task (⌘S)">
             Save Task
           </Button>
         </div>
       </form>
+
+      {/* Brand Footer at end of create / edit tasks screen (Requirement 6) */}
+      <BrandFooter tagline="Orbit your development workflow with clarity and speed" />
 
       {/* Move to Recycle Bin Confirmation */}
       <ConfirmDialog
@@ -1078,6 +1292,20 @@ export const CreateTaskPage = () => {
         message={`Are you sure you want to delete "${title || 'this task'}"? It can be recovered from the Recycle Bin within 30 days.`}
         confirmText="Move to Recycle Bin"
         confirmVariant="danger"
+      />
+
+      {/* Confirm Unsaved Changes Dialog (Requirement 1) */}
+      <ConfirmDialog
+        isOpen={isUnsavedConfirmOpen}
+        onClose={() => setIsUnsavedConfirmOpen(false)}
+        onConfirm={handleSaveAndLeave}
+        onDiscard={handleDiscardChangesAndLeave}
+        title="Save Changes?"
+        message="You have unsaved changes on this task. Would you like to save your changes or discard them before leaving?"
+        confirmText="Save Changes"
+        cancelText="Keep Editing"
+        discardText="Discard Changes"
+        confirmVariant="primary"
       />
     </div>
   );

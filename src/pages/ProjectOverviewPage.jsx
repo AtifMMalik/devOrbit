@@ -26,6 +26,7 @@ import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 import { GithubIcon } from '../components/common/Icons';
 import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
 import { generateActivityData } from '../utils/activityGenerator';
+import { BrandFooter } from '../components/common/BrandFooter';
 
 export const ProjectOverviewPage = () => {
   const { projectId } = useParams();
@@ -491,6 +492,9 @@ export const ProjectOverviewPage = () => {
           showStats
         />
       </div>
+
+      {/* Brand Footer at end of project home screen (Requirement 6) */}
+      <BrandFooter tagline="Orbit your development workflow with clarity and speed" />
 
       {/* Markdown Sync Modal */}
       <MarkdownSyncModal

@@ -7,6 +7,7 @@ import { MarkdownEditor } from '../components/notes/MarkdownEditor';
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
+import { BrandFooter } from '../components/common/BrandFooter';
 
 export const ProjectNotesPage = () => {
   const { projectId } = useParams();
@@ -62,6 +63,9 @@ export const ProjectNotesPage = () => {
           initialContent={currentNote.content}
           onSave={handleSaveNote}
         />
+        <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)' }}>
+          <BrandFooter />
+        </div>
       </div>
 
       <MarkdownSyncModal

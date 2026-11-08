@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, CheckSquare, Square, Flame, Terminal, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, CheckSquare, Square, Flame, Terminal, FileText, CheckCircle2, ImagePlus, Eye, Edit3 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { SpellCheckInput, SpellCheckTextarea } from '../common/SpellCheckField';
+import { RichImageDescriptionEditor } from '../common/RichImageDescriptionEditor';
+import { processDescriptionImage } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 import { generateId } from '../../utils/idGenerator';
@@ -35,6 +39,9 @@ export const TaskModal = ({
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
+  const [descTab, setDescTab] = useState('edit');
+  const [isProcessingDescImg, setIsProcessingDescImg] = useState(false);
+  const descImageInputRef = useRef(null);
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deletingSubtask, setDeletingSubtask] = useState(null);
@@ -214,6 +221,59 @@ export const TaskModal = ({
     }
   };
 
+  // Directly insert image into issue description (Item 3)
+  const handleInsertDescriptionImage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toastError('Please select a valid image file');
+      return;
+    }
+
+    try {
+      setIsProcessingDescImg(true);
+      const dataUrl = await processDescriptionImage(file);
+      const cleanName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'Issue Image';
+      const imageMarkdown = `\n\n![${cleanName}](${dataUrl})\n\n`;
+      setDescription((prev) => (prev ? prev + imageMarkdown : imageMarkdown.trim()));
+      toastSuccess('Added image to issue description');
+    } catch (err) {
+      toastError(err.message || 'Failed to add image');
+    } finally {
+      setIsProcessingDescImg(false);
+      if (descImageInputRef.current) descImageInputRef.current.value = '';
+    }
+  };
+
+  const handleDescImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleInsertDescriptionImage(file);
+  };
+
+  const handleDescriptionPaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleInsertDescriptionImage(file);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleDescriptionDrop = (e) => {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        handleInsertDescriptionImage(file);
+      }
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -376,7 +436,7 @@ export const TaskModal = ({
           >
             Task Title *
           </label>
-          <input
+          <SpellCheckInput
             type="text"
             required
             placeholder="e.g. Implement authentication middleware, fix responsive layout..."
@@ -477,7 +537,7 @@ export const TaskModal = ({
             <Terminal size={12} style={{ color: 'var(--color-primary)' }} />
             Task Prompt (One-click copyable from task card)
           </label>
-          <textarea
+          <SpellCheckTextarea
             rows={2}
             placeholder="Write the exact prompt or specification for this task..."
             value={taskPrompt}
@@ -490,27 +550,15 @@ export const TaskModal = ({
           />
         </div>
 
-        {/* Description & Rich Markdown Notes */}
+        {/* Description & Direct Image Addition (Item 3 & Normal Image Display) */}
         <div>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 'var(--text-2xs)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-secondary)',
-              marginBottom: '2px',
-            }}
-          >
-            <FileText size={12} />
-            Description (Supports Markdown: **bold**, `code`, lists)
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Add context, specifications, or acceptance criteria..."
+          <RichImageDescriptionEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(newVal) => setDescription(newVal)}
+            placeholder="Add context, specifications, or acceptance criteria (supports markdown & images via paste, drag & drop, or Add Image)..."
+            rows={3}
+            mode={descTab}
+            onModeChange={setDescTab}
           />
         </div>
 
@@ -531,7 +579,7 @@ export const TaskModal = ({
               <CheckCircle2 size={12} />
               Completion Note (Optional - filled when task is completed)
             </label>
-            <textarea
+            <SpellCheckTextarea
               rows={2}
               placeholder="Resolution notes, PR link, deployed commit, or sign-off remarks..."
               value={completionNote}
@@ -562,6 +610,7 @@ export const TaskModal = ({
               placeholder="Type a tag and press Enter..."
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
+              spellCheck={true}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ',') {
                   e.preventDefault();
@@ -683,6 +732,7 @@ export const TaskModal = ({
                   value={sub.text}
                   onChange={(e) => handleEditSubtask(sub.id, e.target.value)}
                   placeholder="Subtask title..."
+                  spellCheck={true}
                   style={{
                     flex: 1,
                     fontSize: 'var(--text-xs)',
@@ -722,6 +772,7 @@ export const TaskModal = ({
               placeholder="Add checklist item..."
               value={newSubtaskText}
               onChange={(e) => setNewSubtaskText(e.target.value)}
+              spellCheck={true}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();

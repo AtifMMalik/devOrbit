@@ -84,8 +84,17 @@ export const MarkdownRenderer = ({
   // Inline code
   html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
 
-  // Links [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
+  // Images ![alt](url) - handle images before standard links
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="md-img" style="max-width: 100%; max-height: 500px; height: auto; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin: 8px 0; display: block; box-shadow: var(--shadow-sm);" loading="lazy" />');
+
+  // Standalone image URLs (e.g. https://img6.wsimg.com/serpimg/img/solutionsimg/dbs/salesrephero.png)
+  html = html.replace(
+    /(?<!src=["']|href=["'])(https?:\/\/[^\s<>'"]+\.(?:png|jpe?g|gif|webp|svg|bmp|ico|avif|tiff)(?:\?[^\s<>'"]*)?(?:#[^\s<>'"]*)?)/gi,
+    '<img src="$1" alt="Image" class="md-img" style="max-width: 100%; max-height: 500px; height: auto; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin: 8px 0; display: block; box-shadow: var(--shadow-sm);" loading="lazy" />'
+  );
+
+  // Links [text](url) - negative lookbehind ensures not part of an image
+  html = html.replace(/(?<!\!)\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
 
   // Line breaks and paragraphs
   html = html.replace(/\n\n/g, '<br/><br/>');

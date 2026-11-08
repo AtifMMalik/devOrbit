@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  Copy,
+  Scissors,
+  ClipboardPaste,
+  Pencil,
+  Trash2,
+  FileText,
+  FileCode,
+  Terminal,
+} from 'lucide-react';
 import { TaskKanbanColumn } from './TaskKanbanColumn';
 import { TaskCard } from './TaskCard';
+import { ExportIssuesModal } from './ExportIssuesModal';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
+import { formatTasksToMarkdown, formatTasksToJson } from '../../utils/issueExporter';
 
 const TOP_COLUMNS = [
   { key: 'hotfix', title: 'Hot Fix' },
@@ -23,6 +38,12 @@ export const TaskKanbanBoard = ({
     createTask,
     deleteMultipleTasks,
     triggerConfetti,
+    clipboard,
+    cutTasks,
+    copyTasks,
+    pasteTasks,
+    clearClipboard,
+    activeProjectId,
   } = useWorkspace();
 
   const { toastSuccess, toastInfo } = useToast();
@@ -30,10 +51,24 @@ export const TaskKanbanBoard = ({
   const [isDoneExpanded, setIsDoneExpanded] = useState(false);
   const [isDoneDragOver, setIsDoneDragOver] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState(new Set());
-  const [clipboard, setClipboard] = useState(null); // { action: 'cut' | 'copy', taskIds: string[], tasks: Task[] }
+  const [focusedTaskId, setFocusedTaskId] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, task }
+  const [exportModalState, setExportModalState] = useState({ isOpen: false, list: 'all' });
   const [hoveredColumn, setHoveredColumn] = useState('current');
 
   const boardRef = useRef(null);
+
+  // Close context menu on outside click or scroll
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleCloseMenu = () => setContextMenu(null);
+    window.addEventListener('click', handleCloseMenu);
+    window.addEventListener('scroll', handleCloseMenu, true);
+    return () => {
+      window.removeEventListener('click', handleCloseMenu);
+      window.removeEventListener('scroll', handleCloseMenu, true);
+    };
+  }, [contextMenu]);
 
   const getTasksForColumn = (colKey) => {
     return tasks.filter((t) => {
@@ -56,17 +91,130 @@ export const TaskKanbanBoard = ({
 
   const doneTasks = getTasksForColumn('done');
 
-  // Toggle selection with Cmd+Click or Ctrl+Click
-  const handleSelectToggle = (e, taskId) => {
-    setSelectedTaskIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(taskId)) {
-        next.delete(taskId);
-      } else {
-        next.add(taskId);
-      }
-      return next;
+  // Toggle selection with Cmd+Click or single click
+  const handleSelectToggle = (e, taskId, options = {}) => {
+    if (options.isMulti) {
+      setSelectedTaskIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(taskId)) {
+          next.delete(taskId);
+        } else {
+          next.add(taskId);
+        }
+        return next;
+      });
+    } else {
+      setSelectedTaskIds(new Set([taskId]));
+    }
+    setFocusedTaskId(taskId);
+  };
+
+  // Get active targets for cut/copy/actions (either multi-selected or single-clicked/focused card)
+  const getActiveTaskIds = () => {
+    if (selectedTaskIds.size > 0) return [...selectedTaskIds];
+    if (focusedTaskId) return [focusedTaskId];
+    return [];
+  };
+
+  // Right-click context menu handler on task cards (Requirement 7)
+  const handleContextMenu = (e, task) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedTaskIds.has(task.id)) {
+      setSelectedTaskIds(new Set([task.id]));
+      setFocusedTaskId(task.id);
+    }
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      task,
     });
+  };
+
+  const handleCopyFromMenu = () => {
+    if (!contextMenu) return;
+    const ids = getActiveTaskIds();
+    copyTasks(ids.length > 0 ? ids : [contextMenu.task.id]);
+    toastSuccess(`Copied task to clipboard`);
+    setContextMenu(null);
+  };
+
+  const handleCutFromMenu = () => {
+    if (!contextMenu) return;
+    const ids = getActiveTaskIds();
+    cutTasks(ids.length > 0 ? ids : [contextMenu.task.id]);
+    toastInfo(`Cut task`);
+    setContextMenu(null);
+  };
+
+  const handlePasteFromMenu = () => {
+    if (!contextMenu) return;
+    const count = pasteTasks(contextMenu.task.projectId, contextMenu.task.status);
+    toastSuccess(`Pasted ${count} task(s)`);
+    setContextMenu(null);
+  };
+
+  const handleExportMarkdownFromMenu = async () => {
+    if (!contextMenu) return;
+    const targetTasks = selectedTaskIds.size > 0
+      ? tasks.filter((t) => selectedTaskIds.has(t.id))
+      : [contextMenu.task];
+    const md = formatTasksToMarkdown(targetTasks);
+    try {
+      await navigator.clipboard.writeText(md);
+      toastSuccess(`Exported ${targetTasks.length} issue(s) to Markdown (copied to clipboard)`);
+    } catch (_e) {
+      toastInfo('Markdown export generated');
+    }
+    setContextMenu(null);
+  };
+
+  const handleExportJsonFromMenu = async () => {
+    if (!contextMenu) return;
+    const targetTasks = selectedTaskIds.size > 0
+      ? tasks.filter((t) => selectedTaskIds.has(t.id))
+      : [contextMenu.task];
+    const jsonStr = formatTasksToJson(targetTasks);
+    try {
+      await navigator.clipboard.writeText(jsonStr);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = targetTasks.length === 1 ? `issue-${targetTasks[0].id}.json` : 'exported-issues.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toastSuccess(`Exported ${targetTasks.length} issue(s) as JSON`);
+    } catch (_e) {
+      toastInfo('JSON export generated');
+    }
+    setContextMenu(null);
+  };
+
+  const handleEditFromMenu = () => {
+    if (!contextMenu) return;
+    if (onEditTask) {
+      onEditTask(contextMenu.task);
+    }
+    setContextMenu(null);
+  };
+
+  const handleDeleteFromMenu = () => {
+    if (!contextMenu) return;
+    const ids = getActiveTaskIds();
+    if (ids.length > 1) {
+      deleteMultipleTasks(ids);
+      toastSuccess(`Moved ${ids.length} tasks to Recycle Bin`);
+    } else {
+      if (onDeleteTask) {
+        onDeleteTask(contextMenu.task.id);
+      } else {
+        deleteMultipleTasks([contextMenu.task.id]);
+      }
+    }
+    setContextMenu(null);
+    setSelectedTaskIds(new Set());
+    setFocusedTaskId(null);
   };
 
   // Keyboard shortcut listener for Cmd+C, Cmd+X, Cmd+V, Cmd+A, Delete/Backspace
@@ -86,6 +234,14 @@ export const TaskKanbanBoard = ({
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
 
+      // Escape: close context menu & clear selection
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+        setSelectedTaskIds(new Set());
+        setFocusedTaskId(null);
+        return;
+      }
+
       // Cmd+A: Select all tasks in currently hovered/focused column (or all tasks)
       if (isCmdOrCtrl && key === 'a') {
         e.preventDefault();
@@ -97,63 +253,55 @@ export const TaskKanbanBoard = ({
         return;
       }
 
-      // Cmd+C: Copy selected tasks
+      // Cmd+C: Copy selected or focused tasks to global cross-tab clipboard (Requirement 4)
       if (isCmdOrCtrl && key === 'c') {
-        if (selectedTaskIds.size > 0) {
+        const idsToCopy = getActiveTaskIds();
+        if (idsToCopy.length > 0) {
           e.preventDefault();
-          const selectedList = tasks.filter((t) => selectedTaskIds.has(t.id));
-          setClipboard({ action: 'copy', taskIds: [...selectedTaskIds], tasks: selectedList });
-          toastSuccess(`Copied ${selectedTaskIds.size} task(s)`);
+          copyTasks(idsToCopy);
+          toastSuccess(`Copied ${idsToCopy.length} task(s)`);
         }
         return;
       }
 
-      // Cmd+X: Cut selected tasks
+      // Cmd+X: Cut selected or focused tasks with visual indication (Requirement 4)
       if (isCmdOrCtrl && key === 'x') {
-        if (selectedTaskIds.size > 0) {
+        const idsToCut = getActiveTaskIds();
+        if (idsToCut.length > 0) {
           e.preventDefault();
-          const selectedList = tasks.filter((t) => selectedTaskIds.has(t.id));
-          setClipboard({ action: 'cut', taskIds: [...selectedTaskIds], tasks: selectedList });
-          toastInfo(`Cut ${selectedTaskIds.size} task(s)`);
+          cutTasks(idsToCut);
+          toastInfo(`Cut ${idsToCut.length} task(s)`);
         }
         return;
       }
 
-      // Cmd+V: Paste items into target column
+      // Cmd+V: Paste items into target column and project
       if (isCmdOrCtrl && key === 'v') {
         if (clipboard && clipboard.tasks?.length > 0) {
           e.preventDefault();
           const targetStatus = hoveredColumn || 'current';
-
+          const targetProjectId = tasks[0]?.projectId || activeProjectId;
+          const count = pasteTasks(targetProjectId, targetStatus);
           if (clipboard.action === 'cut') {
-            clipboard.tasks.forEach((task) => {
-              updateTaskStatus(task.id, targetStatus);
-            });
-            toastSuccess(`Moved ${clipboard.tasks.length} task(s) to ${targetStatus}`);
-            setClipboard(null);
-            setSelectedTaskIds(new Set());
-          } else if (clipboard.action === 'copy') {
-            clipboard.tasks.forEach((task) => {
-              const { id: _id, createdAt: _created, updatedAt: _updated, ...rest } = task;
-              createTask({
-                ...rest,
-                title: `${task.title} (Copy)`,
-                status: targetStatus,
-              });
-            });
-            toastSuccess(`Pasted ${clipboard.tasks.length} task(s) into ${targetStatus}`);
+            toastSuccess(`Moved ${count} task(s) to ${targetStatus}`);
+          } else {
+            toastSuccess(`Pasted ${count} task(s) into ${targetStatus}`);
           }
+          setSelectedTaskIds(new Set());
         }
         return;
       }
 
-      // Delete or Backspace: Move selected tasks to Recycle Bin
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedTaskIds.size > 0) {
-        e.preventDefault();
-        const idsToDelete = [...selectedTaskIds];
-        deleteMultipleTasks(idsToDelete);
-        setSelectedTaskIds(new Set());
-        toastSuccess(`Moved ${idsToDelete.length} task(s) to Recycle Bin`);
+      // Delete or Backspace: Move selected or focused tasks to Recycle Bin
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const idsToDelete = getActiveTaskIds();
+        if (idsToDelete.length > 0) {
+          e.preventDefault();
+          deleteMultipleTasks(idsToDelete);
+          setSelectedTaskIds(new Set());
+          setFocusedTaskId(null);
+          toastSuccess(`Moved ${idsToDelete.length} task(s) to Recycle Bin`);
+        }
       }
 
       // Escape: clear selection
@@ -164,7 +312,7 @@ export const TaskKanbanBoard = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedTaskIds, clipboard, hoveredColumn, tasks, updateTaskStatus, createTask, deleteMultipleTasks, toastSuccess, toastInfo]);
+  }, [selectedTaskIds, clipboard, hoveredColumn, tasks, updateTaskStatus, createTask, deleteMultipleTasks, copyTasks, cutTasks, pasteTasks, activeProjectId, toastSuccess, toastInfo]);
 
   // Handle multi-drag start
   const handleDragStart = (e, taskId) => {
@@ -278,7 +426,7 @@ export const TaskKanbanBoard = ({
             type="button"
             onClick={() => {
               setSelectedTaskIds(new Set());
-              setClipboard(null);
+              clearClipboard();
             }}
             style={{
               background: 'transparent',
@@ -318,11 +466,13 @@ export const TaskKanbanBoard = ({
                 tasks={colTasks}
                 selectedTaskIds={selectedTaskIds}
                 onSelectToggle={handleSelectToggle}
+                onContextMenu={handleContextMenu}
                 onAddTask={onAddTask}
                 onEditTask={onEditTask}
                 onDeleteTask={onDeleteTask}
                 onDropTask={handleDropTasks}
                 onDragStart={handleDragStart}
+                onExportColumn={(colKey) => setExportModalState({ isOpen: true, list: colKey })}
               />
             </div>
           );
@@ -432,6 +582,7 @@ export const TaskKanbanBoard = ({
                     task={task}
                     isSelected={selectedTaskIds.has(task.id)}
                     onSelectToggle={handleSelectToggle}
+                    onContextMenu={handleContextMenu}
                     onEdit={onEditTask}
                     onDelete={onDeleteTask}
                     onDragStart={handleDragStart}
@@ -455,6 +606,239 @@ export const TaskKanbanBoard = ({
           </div>
         )}
       </div>
+
+      {/* Right-Click Custom Context Menu (Requirement 7 & Left-Aligned) */}
+      {contextMenu && (
+        <div
+          className="glass-panel animate-pop"
+          style={{
+            position: 'fixed',
+            top: Math.min(window.innerHeight - 320, Math.max(10, contextMenu.y)),
+            left: Math.min(window.innerWidth - 220, Math.max(10, contextMenu.x)),
+            zIndex: 'var(--z-popover)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-xl), 0 8px 32px rgba(0,0,0,0.4)',
+            padding: '4px',
+            minWidth: '200px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            fontSize: 'var(--text-xs)',
+            textAlign: 'left',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Menu Header with Task Title */}
+          <div
+            style={{
+              padding: '6px 8px',
+              fontSize: '11px',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-muted)',
+              borderBottom: '1px solid var(--border-subtle)',
+              marginBottom: 2,
+              textAlign: 'left',
+            }}
+            className="truncate"
+          >
+            {contextMenu.task.title}
+          </div>
+
+          {/* Copy Option */}
+          <button
+            type="button"
+            onClick={handleCopyFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              gap: 8,
+            }}
+            className="context-menu-item"
+          >
+            <Copy size={13} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Copy Issue</span>
+            <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>⌘C</span>
+          </button>
+
+          {/* Cut Option */}
+          <button
+            type="button"
+            onClick={handleCutFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              gap: 8,
+            }}
+            className="context-menu-item"
+          >
+            <Scissors size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Cut Issue</span>
+            <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>⌘X</span>
+          </button>
+
+          {/* Paste Option */}
+          {clipboard && clipboard.tasks?.length > 0 && (
+            <button
+              type="button"
+              onClick={handlePasteFromMenu}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: 'var(--radius-xs)',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                fontSize: 'var(--text-xs)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                gap: 8,
+              }}
+              className="context-menu-item"
+            >
+              <ClipboardPaste size={13} style={{ color: '#10b981', flexShrink: 0 }} />
+              <span style={{ textAlign: 'left' }}>Paste Issue</span>
+              <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>⌘V</span>
+            </button>
+          )}
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 0' }} />
+
+          {/* Export to Markdown */}
+          <button
+            type="button"
+            onClick={handleExportMarkdownFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: 8,
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="context-menu-item"
+          >
+            <FileText size={13} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Export to Markdown</span>
+          </button>
+
+          {/* Export to JSON */}
+          <button
+            type="button"
+            onClick={handleExportJsonFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: 8,
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="context-menu-item"
+          >
+            <FileCode size={13} style={{ color: '#06b6d4', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Export to JSON</span>
+          </button>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 0' }} />
+
+          {/* Edit Task */}
+          <button
+            type="button"
+            onClick={handleEditFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: 8,
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="context-menu-item"
+          >
+            <Pencil size={13} style={{ flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Edit Details</span>
+          </button>
+
+          {/* Delete Task */}
+          <button
+            type="button"
+            onClick={handleDeleteFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: 8,
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: '#f43f5e',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            className="context-menu-item"
+          >
+            <Trash2 size={13} style={{ flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Delete to Recycle Bin</span>
+          </button>
+        </div>
+      )}
+
+      {/* Export / Copy Issues Modal (Markdown & JSON) */}
+      <ExportIssuesModal
+        isOpen={exportModalState.isOpen}
+        onClose={() => setExportModalState({ isOpen: false, list: 'all' })}
+        initialList={exportModalState.list}
+        tasks={tasks}
+      />
     </div>
   );
 };

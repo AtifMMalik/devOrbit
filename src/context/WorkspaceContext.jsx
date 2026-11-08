@@ -14,6 +14,45 @@ export const WorkspaceProvider = ({ children }) => {
   const redoStackRef = useRef([]);
   const deletionStackRef = undoStackRef; // Backwards-compatibility alias
 
+  // Global cross-window clipboard state (Requirement 7)
+  const [clipboard, setClipboardState] = useState(() => {
+    try {
+      const raw = localStorage.getItem('devorbit_clipboard_data');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const setClipboard = useCallback((newClip) => {
+    setClipboardState(newClip);
+    try {
+      if (newClip) {
+        localStorage.setItem('devorbit_clipboard_data', JSON.stringify(newClip));
+      } else {
+        localStorage.removeItem('devorbit_clipboard_data');
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  // Listen for storage changes across browser tabs and separate windows
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'devorbit_clipboard_data') {
+        try {
+          const parsed = e.newValue ? JSON.parse(e.newValue) : null;
+          setClipboardState(parsed);
+        } catch {
+          setClipboardState(null);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Sync to LocalStorage whenever data changes
   useEffect(() => {
     saveWorkspaceData(data);
@@ -926,6 +965,287 @@ export const WorkspaceProvider = ({ children }) => {
     }));
   }, []);
 
+  // Custom Lists (Requirement 12)
+  const getProjectCustomLists = useCallback((projectId) => {
+    const proj = data.projects.find((p) => p.id === projectId);
+    return proj?.customLists || [];
+  }, [data.projects]);
+
+  const addCustomList = useCallback((projectId, title) => {
+    const newList = {
+      id: generateId('list'),
+      title: title.trim(),
+      type: 'custom',
+      items: [],
+      createdAt: new Date().toISOString(),
+    };
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: [...(p.customLists || []), newList],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    return newList;
+  }, []);
+
+  const deleteCustomList = useCallback((projectId, listId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: (p.customLists || []).filter((l) => l.id !== listId),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  const addCustomListItem = useCallback((projectId, listId, text) => {
+    const newItem = {
+      id: generateId('item'),
+      text: text.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: (p.customLists || []).map((l) => {
+            if (l.id !== listId) return l;
+            return {
+              ...l,
+              items: [...(l.items || []), newItem],
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+    return newItem;
+  }, []);
+
+  const toggleCustomListItem = useCallback((projectId, listId, itemId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: (p.customLists || []).map((l) => {
+            if (l.id !== listId) return l;
+            return {
+              ...l,
+              items: (l.items || []).map((it) =>
+                it.id === itemId ? { ...it, completed: !it.completed } : it
+              ),
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  const updateCustomListItem = useCallback((projectId, listId, itemId, newText) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: (p.customLists || []).map((l) => {
+            if (l.id !== listId) return l;
+            return {
+              ...l,
+              items: (l.items || []).map((it) =>
+                it.id === itemId ? { ...it, text: newText } : it
+              ),
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  const deleteCustomListItem = useCallback((projectId, listId, itemId) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          customLists: (p.customLists || []).map((l) => {
+            if (l.id !== listId) return l;
+            return {
+              ...l,
+              items: (l.items || []).filter((it) => it.id !== itemId),
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  const deleteDefaultList = useCallback((projectId, listType) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const currentDeleted = p.deletedDefaultLists || [];
+        if (currentDeleted.includes(listType)) return p;
+        return {
+          ...p,
+          deletedDefaultLists: [...currentDeleted, listType],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  const restoreDefaultList = useCallback((projectId, listType) => {
+    setData((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          deletedDefaultLists: (p.deletedDefaultLists || []).filter((t) => t !== listType),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    }));
+  }, []);
+
+  // Global Clipboard actions (Requirement 7)
+  const cutTasks = useCallback((taskIds) => {
+    const ids = Array.isArray(taskIds) ? taskIds : [taskIds];
+    const selectedList = data.tasks.filter((t) => ids.includes(t.id));
+    if (selectedList.length === 0) return;
+    const clipPayload = { action: 'cut', taskIds: ids, tasks: selectedList };
+    setClipboard(clipPayload);
+  }, [data.tasks, setClipboard]);
+
+  const copyTasks = useCallback((taskIds) => {
+    const ids = Array.isArray(taskIds) ? taskIds : [taskIds];
+    const selectedList = data.tasks.filter((t) => ids.includes(t.id));
+    if (selectedList.length === 0) return;
+    const clipPayload = { action: 'copy', taskIds: ids, tasks: selectedList };
+    setClipboard(clipPayload);
+  }, [data.tasks, setClipboard]);
+
+  const pasteTasks = useCallback((targetProjectId, targetStatus = 'current') => {
+    if (!clipboard || !clipboard.tasks || clipboard.tasks.length === 0) return 0;
+    const count = clipboard.tasks.length;
+
+    if (clipboard.action === 'cut') {
+      setData((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((task) => {
+          if (!clipboard.taskIds.includes(task.id)) return task;
+          return {
+            ...task,
+            projectId: targetProjectId || task.projectId,
+            status: targetStatus,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
+      }));
+      setClipboard(null);
+    } else if (clipboard.action === 'copy') {
+      const newTasks = clipboard.tasks.map((task) => {
+        const { id: _id, createdAt: _created, updatedAt: _updated, ...rest } = task;
+        return {
+          ...rest,
+          id: generateId('task'),
+          projectId: targetProjectId || task.projectId,
+          title: `${task.title} (Copy)`,
+          status: targetStatus,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      setData((prev) => ({
+        ...prev,
+        tasks: [...newTasks, ...prev.tasks],
+      }));
+    }
+    return count;
+  }, [clipboard, setClipboard]);
+
+  const clearClipboard = useCallback(() => {
+    setClipboard(null);
+  }, [setClipboard]);
+
+  // Project Ideas (Requirement 13)
+  const createIdea = useCallback((ideaData) => {
+    const newIdea = {
+      id: generateId('idea'),
+      title: ideaData.title.trim(),
+      description: ideaData.description || '',
+      tags: Array.isArray(ideaData.tags) ? ideaData.tags : [],
+      priority: ideaData.priority || 'medium',
+      status: ideaData.status || 'draft',
+      targetFeatures: Array.isArray(ideaData.targetFeatures) ? ideaData.targetFeatures : [],
+      color: ideaData.color || '#0084ff',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setData((prev) => ({
+      ...prev,
+      ideas: [newIdea, ...(prev.ideas || [])],
+    }));
+    return newIdea;
+  }, []);
+
+  const updateIdea = useCallback((ideaId, updates) => {
+    setData((prev) => ({
+      ...prev,
+      ideas: (prev.ideas || []).map((i) =>
+        i.id === ideaId ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i
+      ),
+    }));
+  }, []);
+
+  const deleteIdea = useCallback((ideaId) => {
+    setData((prev) => ({
+      ...prev,
+      ideas: (prev.ideas || []).filter((i) => i.id !== ideaId),
+    }));
+  }, []);
+
+  const convertIdeaToProject = useCallback((ideaId) => {
+    const idea = (data.ideas || []).find((i) => i.id === ideaId);
+    if (!idea) return null;
+
+    const newProject = createProject({
+      name: idea.title,
+      description: idea.description,
+      tags: idea.tags,
+      color: idea.color,
+    });
+
+    if (idea.targetFeatures && idea.targetFeatures.length > 0) {
+      idea.targetFeatures.forEach((feat) => {
+        addProjectTodo(newProject.id, feat);
+      });
+    }
+
+    updateIdea(ideaId, { status: 'converted', convertedProjectId: newProject.id });
+    return newProject;
+  }, [data.ideas, createProject, addProjectTodo, updateIdea]);
+
   // =========================================================================
   // Workspace Backup & Recovery
   // =========================================================================
@@ -1041,6 +1361,29 @@ export const WorkspaceProvider = ({ children }) => {
         toggleProjectTesting,
         updateProjectTesting,
         deleteProjectTesting,
+        // Custom lists (Requirement 12)
+        getProjectCustomLists,
+        addCustomList,
+        deleteCustomList,
+        addCustomListItem,
+        toggleCustomListItem,
+        updateCustomListItem,
+        deleteCustomListItem,
+        deleteDefaultList,
+        restoreDefaultList,
+        // Global Clipboard (Requirement 7)
+        clipboard,
+        setClipboard,
+        cutTasks,
+        copyTasks,
+        pasteTasks,
+        clearClipboard,
+        // Project Ideas (Requirement 13)
+        ideas: data.ideas || [],
+        createIdea,
+        updateIdea,
+        deleteIdea,
+        convertIdeaToProject,
         // Notes methods
         getProjectNotes,
         saveProjectNote,

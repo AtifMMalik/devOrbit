@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Flame } from 'lucide-react';
+import { Plus, Flame, FileDown } from 'lucide-react';
 import { TaskCard } from './TaskCard';
+import { BrandFooter } from '../common/BrandFooter';
 
 export const TaskKanbanColumn = ({
   status,
@@ -13,6 +14,8 @@ export const TaskKanbanColumn = ({
   onDeleteTask,
   onDropTask,
   onDragStart,
+  onExportColumn,
+  onContextMenu,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -129,15 +132,29 @@ export const TaskKanbanColumn = ({
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onAddTask(status)}
-          className="btn-icon"
-          style={{ width: 20, height: 20 }}
-          title={`Add task to ${title}`}
-        >
-          <Plus size={12} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {onExportColumn && (
+            <button
+              type="button"
+              onClick={() => onExportColumn(status)}
+              className="btn-icon"
+              style={{ width: 20, height: 20 }}
+              title={`Copy / Export ${title} issues (Markdown or JSON)`}
+            >
+              <FileDown size={12} />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onAddTask(status)}
+            className="btn-icon"
+            style={{ width: 20, height: 20 }}
+            title={`Add task to ${title}`}
+          >
+            <Plus size={12} />
+          </button>
+        </div>
       </div>
 
       {/* Column Task Cards */}
@@ -157,6 +174,7 @@ export const TaskKanbanColumn = ({
             task={task}
             isSelected={selectedTaskIds && selectedTaskIds.has(task.id)}
             onSelectToggle={onSelectToggle}
+            onContextMenu={onContextMenu}
             onEdit={onEditTask}
             onDelete={onDeleteTask}
             onDragStart={handleDragStartInternal}
@@ -178,6 +196,9 @@ export const TaskKanbanColumn = ({
             Empty
           </div>
         )}
+
+        {/* Brand Footer below every list */}
+        <BrandFooter compact tagline="orbit your issues" style={{ marginTop: 'auto', paddingTop: 'var(--space-3)' }} />
       </div>
     </div>
   );

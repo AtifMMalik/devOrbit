@@ -14,6 +14,8 @@ import { AnalyticsProfilePage } from './pages/AnalyticsProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CreateProjectPage } from './pages/CreateProjectPage';
 import { CreateTaskPage } from './pages/CreateTaskPage';
+import { ProjectIdeasPage } from './pages/ProjectIdeasPage';
+import { CreateIdeaPage } from './pages/CreateIdeaPage';
 
 export default function App() {
   const [isPreloading, setIsPreloading] = useState(true);
@@ -28,6 +30,10 @@ export default function App() {
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<DashboardOverviewPage />} />
                 <Route path="analytics" element={<AnalyticsProfilePage />} />
+                <Route path="ideas" element={<ProjectIdeasPage />} />
+                <Route path="ideas/new" element={<CreateIdeaPage />} />
+                <Route path="ideas/:ideaId" element={<CreateIdeaPage />} />
+                <Route path="ideas/:ideaId/edit" element={<CreateIdeaPage />} />
                 <Route path="project/new" element={<CreateProjectPage />} />
                 <Route path="project/:projectId/edit" element={<CreateProjectPage />} />
                 <Route path="tasks/new" element={<CreateTaskPage />} />

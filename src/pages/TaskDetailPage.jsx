@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -21,11 +21,16 @@ import {
   ExternalLink,
   ChevronUp,
   ChevronDown,
+  Sparkles,
+  ImagePlus,
 } from 'lucide-react';
 import { PriorityBadge, StatusBadge, TagBadge } from '../components/common/Badge';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 import { Button } from '../components/common/Button';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { SpellCheckInput, SpellCheckTextarea } from '../components/common/SpellCheckField';
+import { RichImageDescriptionEditor } from '../components/common/RichImageDescriptionEditor';
+import { processDescriptionImage } from '../utils/imageUtils';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
 import { generateId } from '../utils/idGenerator';
@@ -65,9 +70,12 @@ export const TaskDetailPage = () => {
 
   const [descMode, setDescMode] = useState('edit'); // 'edit' | 'preview'
   const [isCopied, setIsCopied] = useState(false);
+  const [isDescCopied, setIsDescCopied] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
+  const [isProcessingDescImg, setIsProcessingDescImg] = useState(false);
+  const descImageInputRef = useRef(null);
 
   // Auto-switch to preview mode if description matches searchKeyword
   useEffect(() => {
@@ -153,6 +161,71 @@ export const TaskDetailPage = () => {
       setTimeout(() => setIsCopied(false), 2000);
     } catch (e) {
       // Fallback
+    }
+  };
+
+  const handleCopyDescription = async () => {
+    if (!description) return;
+    try {
+      await navigator.clipboard.writeText(description);
+      setIsDescCopied(true);
+      toastSuccess('Task description copied to clipboard');
+      setTimeout(() => setIsDescCopied(false), 2000);
+    } catch (e) {
+      // Fallback
+    }
+  };
+
+  // Directly insert image into issue description (Item 3)
+  const handleInsertDescriptionImage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toastError('Please select a valid image file');
+      return;
+    }
+
+    try {
+      setIsProcessingDescImg(true);
+      const dataUrl = await processDescriptionImage(file);
+      const cleanName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'Issue Image';
+      const imageMarkdown = `\n\n![${cleanName}](${dataUrl})\n\n`;
+      setDescription((prev) => (prev ? prev + imageMarkdown : imageMarkdown.trim()));
+      toastSuccess('Added image to issue description');
+    } catch (err) {
+      toastError(err.message || 'Failed to add image');
+    } finally {
+      setIsProcessingDescImg(false);
+      if (descImageInputRef.current) descImageInputRef.current.value = '';
+    }
+  };
+
+  const handleDescImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleInsertDescriptionImage(file);
+  };
+
+  const handleDescriptionPaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleInsertDescriptionImage(file);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleDescriptionDrop = (e) => {
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        handleInsertDescriptionImage(file);
+      }
     }
   };
 
@@ -427,7 +500,7 @@ export const TaskDetailPage = () => {
               <PriorityBadge priority={priority} />
             </div>
 
-            <input
+            <SpellCheckInput
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -454,6 +527,27 @@ export const TaskDetailPage = () => {
             )}
           </div>
 
+          {/* Description & Rich Markdown Viewer / Editor (Requirement 5 & Normal Visual Image Display) */}
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-4) var(--space-5)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <RichImageDescriptionEditor
+              value={description}
+              onChange={(newVal) => setDescription(newVal)}
+              placeholder="Write rich task specifications, code examples, acceptance criteria using markdown (**bold**, `code`, - bullet lists, paste or drag & drop images)..."
+              rows={8}
+              mode={descMode}
+              onModeChange={setDescMode}
+              onCopy={handleCopyDescription}
+              isCopied={isDescCopied}
+              highlight={searchKeyword}
+            />
+          </div>
+
           {/* Task Prompt Box (One-click copyable specification prompt) */}
           <div
             className="card"
@@ -465,7 +559,7 @@ export const TaskDetailPage = () => {
               backgroundColor: 'var(--bg-surface)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Terminal size={15} style={{ color: 'var(--color-primary)' }} />
                 <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
@@ -473,20 +567,34 @@ export const TaskDetailPage = () => {
                 </span>
               </div>
 
-              {taskPrompt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <Button
+                  type="button"
                   variant="secondary"
                   size="sm"
-                  icon={isCopied ? Check : Copy}
-                  onClick={handleCopyPrompt}
-                  title="One-click copy task prompt"
+                  icon={Sparkles}
+                  disabled={true}
+                  title="Generate prompt using AI (Coming soon when backend is connected)"
+                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
                 >
-                  {isCopied ? 'Copied!' : 'Copy Prompt'}
+                  Generate with AI
                 </Button>
-              )}
+
+                {taskPrompt && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={isCopied ? Check : Copy}
+                    onClick={handleCopyPrompt}
+                    title="One-click copy task prompt"
+                  >
+                    {isCopied ? 'Copied!' : 'Copy Prompt'}
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <textarea
+            <SpellCheckTextarea
               rows={4}
               placeholder="Write the exact prompt, technical instructions, or AI specification for this task..."
               value={taskPrompt}
@@ -511,88 +619,6 @@ export const TaskDetailPage = () => {
             <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
               This prompt can be copied in 1-click directly from the task card on the Kanban board.
             </p>
-          </div>
-
-          {/* Description & Rich Markdown Viewer / Editor */}
-          <div
-            className="card"
-            style={{
-              padding: 'var(--space-4) var(--space-5)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-3)',
-              backgroundColor: 'var(--bg-surface)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-default)', paddingBottom: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FileText size={15} style={{ color: 'var(--color-primary)' }} />
-                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-                  Task Description (Markdown)
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 4 }}>
-                <button
-                  type="button"
-                  onClick={() => setDescMode('edit')}
-                  style={{
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: 'var(--radius-xs)',
-                    backgroundColor: descMode === 'edit' ? 'var(--bg-surface-active)' : 'transparent',
-                    color: descMode === 'edit' ? 'var(--color-primary)' : 'var(--text-muted)',
-                    border: '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Edit3 size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDescMode('preview')}
-                  style={{
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: 'var(--radius-xs)',
-                    backgroundColor: descMode === 'preview' ? 'var(--bg-surface-active)' : 'transparent',
-                    color: descMode === 'preview' ? 'var(--color-primary)' : 'var(--text-muted)',
-                    border: '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Eye size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                  Preview
-                </button>
-              </div>
-            </div>
-
-            {descMode === 'edit' ? (
-              <textarea
-                rows={8}
-                placeholder="Write rich task specifications, code examples, acceptance criteria using markdown (**bold**, `code`, - bullet lists)..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '12px',
-                  lineHeight: 1.5,
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  padding: 'var(--space-4)',
-                  backgroundColor: 'var(--bg-app)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-default)',
-                  minHeight: '140px',
-                }}
-              >
-                <MarkdownRenderer content={description || '*No description written yet.*'} highlight={searchKeyword} />
-              </div>
-            )}
           </div>
 
           {/* Subtasks Checklist */}
@@ -663,12 +689,14 @@ export const TaskDetailPage = () => {
             </div>
 
             <form onSubmit={handleAddSubtask} style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <input
-                type="text"
-                placeholder="Add subtask checklist item..."
-                value={newSubtaskText}
-                onChange={(e) => setNewSubtaskText(e.target.value)}
-              />
+              <div style={{ flex: 1 }}>
+                <SpellCheckInput
+                  type="text"
+                  placeholder="Add subtask checklist item..."
+                  value={newSubtaskText}
+                  onChange={(e) => setNewSubtaskText(e.target.value)}
+                />
+              </div>
               <Button type="submit" variant="secondary" size="sm" icon={Plus}>
                 Add
               </Button>
@@ -695,7 +723,7 @@ export const TaskDetailPage = () => {
                 </span>
               </div>
 
-              <textarea
+              <SpellCheckTextarea
                 rows={3}
                 placeholder="Sign-off notes, PR links, deployment commit hash, or post-mortem notes..."
                 value={completionNote}

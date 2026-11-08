@@ -217,6 +217,7 @@ export const MarkdownSyncModal = ({
 
             <textarea
               rows={9}
+              spellCheck={true}
               placeholder={`# Project Tasks
 ## Current
 - [ ] Build user onboarding #feature

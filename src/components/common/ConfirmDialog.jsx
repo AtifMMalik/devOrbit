@@ -7,13 +7,16 @@ export const ConfirmDialog = ({
   isOpen,
   onClose,
   onConfirm,
+  onDiscard,
   title = 'Confirm Action',
   message = 'Are you sure you want to proceed?',
   confirmText = 'Delete',
   confirmVariant = 'danger',
+  cancelText = 'Cancel',
+  discardText = 'Discard Changes',
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="420px">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="460px">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
           <div
@@ -31,15 +34,33 @@ export const ConfirmDialog = ({
           >
             <AlertTriangle size={20} />
           </div>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.5 }}>
             {message}
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {cancelText}
           </Button>
+
+          {onDiscard && (
+            <Button
+              variant="danger"
+              style={{
+                backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                color: '#f43f5e',
+                borderColor: 'rgba(244, 63, 94, 0.25)',
+              }}
+              onClick={() => {
+                onDiscard();
+                onClose();
+              }}
+            >
+              {discardText}
+            </Button>
+          )}
+
           <Button
             variant={confirmVariant}
             onClick={() => {
