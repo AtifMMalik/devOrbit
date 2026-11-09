@@ -83,7 +83,6 @@ export const WorkspaceProvider = ({ children }) => {
       name: projectData.name.trim(),
       description: projectData.description?.trim() || '',
       author: projectData.author?.trim() || '',
-      readme: projectData.readme || '',
       liveUrl: projectData.liveUrl?.trim() || '',
       githubUrl: projectData.githubUrl?.trim() || '',
       color: projectData.color || '#0084ff',
@@ -447,6 +446,66 @@ export const WorkspaceProvider = ({ children }) => {
       };
     });
   }, [triggerConfetti]);
+
+  const moveTaskToTop = useCallback((taskId) => {
+    if (!taskId) return;
+    setData((prev) => {
+      const taskIndex = prev.tasks.findIndex((t) => t.id === taskId);
+      if (taskIndex === -1) return prev;
+      const targetTask = prev.tasks[taskIndex];
+      const targetStatus = targetTask.status || 'current';
+      const targetProjectId = targetTask.projectId;
+
+      const otherTasks = prev.tasks.filter((t) => t.id !== taskId);
+      const firstIndex = otherTasks.findIndex(
+        (t) => (t.status || 'current') === targetStatus && t.projectId === targetProjectId
+      );
+
+      const newTasks = [...otherTasks];
+      if (firstIndex === -1) {
+        newTasks.unshift(targetTask);
+      } else {
+        newTasks.splice(firstIndex, 0, targetTask);
+      }
+
+      return {
+        ...prev,
+        tasks: newTasks,
+      };
+    });
+  }, []);
+
+  const moveTaskToBottom = useCallback((taskId) => {
+    if (!taskId) return;
+    setData((prev) => {
+      const taskIndex = prev.tasks.findIndex((t) => t.id === taskId);
+      if (taskIndex === -1) return prev;
+      const targetTask = prev.tasks[taskIndex];
+      const targetStatus = targetTask.status || 'current';
+      const targetProjectId = targetTask.projectId;
+
+      const otherTasks = prev.tasks.filter((t) => t.id !== taskId);
+      let lastIndex = -1;
+      for (let i = otherTasks.length - 1; i >= 0; i--) {
+        if ((otherTasks[i].status || 'current') === targetStatus && otherTasks[i].projectId === targetProjectId) {
+          lastIndex = i;
+          break;
+        }
+      }
+
+      const newTasks = [...otherTasks];
+      if (lastIndex === -1) {
+        newTasks.push(targetTask);
+      } else {
+        newTasks.splice(lastIndex + 1, 0, targetTask);
+      }
+
+      return {
+        ...prev,
+        tasks: newTasks,
+      };
+    });
+  }, []);
 
   // Soft-delete task into Recycle Bin (recoverable for 30 days)
   const deleteTask = useCallback((id) => {
@@ -1333,6 +1392,8 @@ export const WorkspaceProvider = ({ children }) => {
         updateTask,
         updateTaskStatus,
         reorderTasks,
+        moveTaskToTop,
+        moveTaskToBottom,
         deleteTask,
         deleteMultipleTasks,
         restoreTask,

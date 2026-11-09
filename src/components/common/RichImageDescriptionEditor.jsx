@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ImagePlus,
   Trash2,
@@ -13,9 +13,14 @@ import {
   Link,
   ExternalLink,
   AlertCircle,
+  CheckSquare,
+  AtSign,
+  Folder,
 } from 'lucide-react';
 import { SpellCheckTextarea } from './SpellCheckField';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { MarkdownRenderer, toggleChecklistInMarkdown } from './MarkdownRenderer';
+import { getCaretCoordinates } from '../../utils/caretCoordinates';
+import { useWorkspace } from '../../context/WorkspaceContext';
 import {
   processDescriptionImage,
   parseMarkdownToBlocks,
@@ -53,6 +58,9 @@ export const RichImageDescriptionEditor = ({
   disabled = false,
 }) => {
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const workspace = useWorkspace ? useWorkspace() : {};
+  const projects = workspace?.projects || [];
+  const tasks = workspace?.tasks || [];
   const [blocks, setBlocks] = useState(() => parseMarkdownToBlocks(value));
   const [isProcessingImg, setIsProcessingImg] = useState(false);
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -60,9 +68,246 @@ export const RichImageDescriptionEditor = ({
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInputValue, setUrlInputValue] = useState('');
   const [failedImages, setFailedImages] = useState({});
+  const [showMentionMenu, setShowMentionMenu] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [inlineMention, setInlineMention] = useState(null);
+  const textareaRefs = useRef({});
+  const mentionMenuRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const lastSerializedRef = useRef(value);
+
+  const handleTogglePreviewCheckbox = (targetIdx) => {
+    const updated = toggleChecklistInMarkdown(value, targetIdx);
+    lastSerializedRef.current = updated;
+    setBlocks(parseMarkdownToBlocks(updated));
+    if (onChange) onChange(updated);
+  };
+
+  const checkMentionTrigger = useCallback((blockId, textarea) => {
+    if (!textarea) return;
+    const caret = typeof textarea.selectionStart === 'number' ? textarea.selectionStart : (textarea.value || '').length;
+    const val = textarea.value || '';
+    const beforeCaret = val.slice(0, caret);
+
+    // Find the last occurrence of '#[' or '@[' before the caret
+    const lastHashBracket = beforeCaret.lastIndexOf('#[');
+    const lastAtBracket = beforeCaret.lastIndexOf('@[');
+
+    let trigger = null;
+    let triggerIndex = -1;
+
+    if (lastHashBracket > lastAtBracket) {
+      trigger = '#[';
+      triggerIndex = lastHashBracket;
+    } else if (lastAtBracket > -1) {
+      trigger = '@[';
+      triggerIndex = lastAtBracket;
+    }
+
+    if (triggerIndex !== -1) {
+      const textAfterTrigger = beforeCaret.slice(triggerIndex + 2);
+      // As long as there is no newline or closing bracket, we are inside the mention
+      if (!textAfterTrigger.includes('\n') && !textAfterTrigger.includes(']')) {
+        const query = textAfterTrigger.trim().toLowerCase();
+        const coords = getCaretCoordinates(textarea, caret);
+
+        setInlineMention((prev) => {
+          const prevIndex =
+            prev && prev.isOpen && prev.triggerIndex === triggerIndex && prev.query === query
+              ? prev.selectedIndex
+              : 0;
+          return {
+            isOpen: true,
+            type: trigger === '#[' ? 'project' : 'task',
+            query,
+            blockId,
+            triggerIndex,
+            caretIndex: caret,
+            coords: {
+              top: (coords.top || 0) + (coords.height || 18) + 4,
+              left: Math.min(window.innerWidth - 260, Math.max(12, coords.left || 20)),
+            },
+            selectedIndex: prevIndex,
+          };
+        });
+        return;
+      }
+    }
+
+    setInlineMention(null);
+  }, []);
+
+  const inlineMentionItems = useMemo(() => {
+    if (!inlineMention || !inlineMention.isOpen) return [];
+    if (inlineMention.type === 'project') {
+      const list = projects || [];
+      return list
+        .filter((p) => !inlineMention.query || (p.name && p.name.toLowerCase().includes(inlineMention.query)))
+        .slice(0, 8);
+    } else {
+      const list = tasks || [];
+      return list
+        .filter((t) => !inlineMention.query || (t.title && t.title.toLowerCase().includes(inlineMention.query)))
+        .slice(0, 8);
+    }
+  }, [inlineMention, projects, tasks]);
+
+  const handleSelectInlineMention = (item) => {
+    if (!inlineMention || !item) return;
+    const { blockId, triggerIndex, caretIndex, type } = inlineMention;
+    const insertStr = type === 'project' ? `#[${item.name}] ` : `@[${item.title}] `;
+
+    setBlocks((prev) => {
+      const target = prev.find((b) => b.id === blockId);
+      if (!target) return prev;
+      const curContent = target.content || '';
+      const before = curContent.slice(0, triggerIndex);
+      const after = curContent.slice(caretIndex);
+      const nextContent = before + insertStr + after;
+
+      const next = prev.map((b) => (b.id === blockId ? { ...b, content: nextContent } : b));
+      const serialized = serializeBlocks(next);
+      lastSerializedRef.current = serialized;
+      if (onChange) onChange(serialized);
+
+      setTimeout(() => {
+        const ta = textareaRefs.current[blockId];
+        if (ta) {
+          ta.focus();
+          const newCaret = triggerIndex + insertStr.length;
+          ta.setSelectionRange(newCaret, newCaret);
+        }
+      }, 30);
+
+      return next;
+    });
+
+    setInlineMention(null);
+    toastSuccess(`Mentioned ${type === 'project' ? item.name : item.title}`);
+  };
+
+  const handleTextBlockKeyDown = (e, blockId) => {
+    if (!inlineMention || !inlineMention.isOpen) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      setInlineMention((prev) => {
+        if (!prev) return null;
+        const total = inlineMentionItems.length;
+        if (total === 0) return prev;
+        return {
+          ...prev,
+          selectedIndex: (prev.selectedIndex + 1) % total,
+        };
+      });
+      return;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      setInlineMention((prev) => {
+        if (!prev) return null;
+        const total = inlineMentionItems.length;
+        if (total === 0) return prev;
+        return {
+          ...prev,
+          selectedIndex: (prev.selectedIndex - 1 + total) % total,
+        };
+      });
+      return;
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (inlineMentionItems.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const selected =
+          inlineMentionItems[inlineMention.selectedIndex] || inlineMentionItems[0];
+        handleSelectInlineMention(selected);
+      }
+      return;
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setInlineMention(null);
+      return;
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalPointerDown = (e) => {
+      if (
+        mentionMenuRef.current &&
+        !mentionMenuRef.current.contains(e.target) &&
+        !Object.values(textareaRefs.current).some((el) => el && el.contains(e.target))
+      ) {
+        setInlineMention(null);
+      }
+    };
+    window.addEventListener('pointerdown', handleGlobalPointerDown);
+    return () => window.removeEventListener('pointerdown', handleGlobalPointerDown);
+  }, []);
+
+  const handleInsertChecklist = () => {
+    setBlocks((prev) => {
+      const targetId = activeBlockId || prev[prev.length - 1]?.id;
+      const targetIdx = prev.findIndex((b) => b.id === targetId);
+      const idx = targetIdx >= 0 ? targetIdx : prev.length - 1;
+
+      const next = [...prev];
+      if (next[idx] && next[idx].type === 'text') {
+        const curContent = next[idx].content || '';
+        const needsNewline = curContent.length > 0 && !curContent.endsWith('\n');
+        next[idx] = {
+          ...next[idx],
+          content: `${curContent}${needsNewline ? '\n' : ''}[] `,
+        };
+      } else {
+        next.push({
+          id: 'b-' + Date.now(),
+          type: 'text',
+          content: '[] ',
+        });
+      }
+
+      const serialized = serializeBlocks(next);
+      lastSerializedRef.current = serialized;
+      if (onChange) onChange(serialized);
+      return next;
+    });
+    toastInfo('Added checklist item "[] "');
+  };
+
+  const handleInsertMention = (mentionStr) => {
+    setBlocks((prev) => {
+      const targetId = activeBlockId || prev[prev.length - 1]?.id;
+      const targetIdx = prev.findIndex((b) => b.id === targetId);
+      const idx = targetIdx >= 0 ? targetIdx : prev.length - 1;
+
+      const next = [...prev];
+      if (next[idx] && next[idx].type === 'text') {
+        const curContent = next[idx].content || '';
+        const space = curContent.length > 0 && !curContent.endsWith(' ') && !curContent.endsWith('\n') ? ' ' : '';
+        next[idx] = {
+          ...next[idx],
+          content: `${curContent}${space}${mentionStr} `,
+        };
+      } else {
+        next.push({
+          id: 'b-' + Date.now(),
+          type: 'text',
+          content: `${mentionStr} `,
+        });
+      }
+
+      const serialized = serializeBlocks(next);
+      lastSerializedRef.current = serialized;
+      if (onChange) onChange(serialized);
+      return next;
+    });
+    setShowMentionMenu(false);
+    setMentionSearch('');
+    toastSuccess(`Mentioned ${mentionStr}`);
+  };
 
   // Sync with external value changes (e.g. initial load, draft restore, task switch)
   useEffect(() => {
@@ -422,6 +667,164 @@ export const RichImageDescriptionEditor = ({
               <span>Image URL</span>
             </button>
 
+            {/* Insert Checklist Item Button */}
+            <button
+              type="button"
+              onClick={handleInsertChecklist}
+              disabled={disabled}
+              style={{
+                fontSize: '11px',
+                padding: '3px 8px',
+                borderRadius: 'var(--radius-xs)',
+                backgroundColor: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Add checklist item in description ([] for unchecked, [.] for checked)"
+            >
+              <CheckSquare size={12} style={{ color: 'var(--status-done-solid)' }} />
+              <span>Checklist []</span>
+            </button>
+
+            {/* Mention Object Button */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowMentionMenu((prev) => !prev)}
+                disabled={disabled}
+                style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-xs)',
+                  backgroundColor: showMentionMenu ? 'var(--bg-surface-active)' : 'transparent',
+                  color: showMentionMenu ? 'var(--color-primary)' : 'var(--text-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all var(--transition-fast)',
+                }}
+                title="Mention project or task using @ or #"
+              >
+                <AtSign size={12} style={{ color: '#818cf8' }} />
+                <span>Mention</span>
+              </button>
+
+              {/* Mention Dropdown */}
+              {showMentionMenu && (
+                <div
+                  className="glass-panel animate-pop"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    marginTop: 4,
+                    zIndex: 100,
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: '6px',
+                    width: '240px',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="text"
+                    placeholder="Search projects or tasks..."
+                    value={mentionSearch}
+                    onChange={(e) => setMentionSearch(e.target.value)}
+                    autoFocus
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 6px',
+                      borderRadius: 'var(--radius-xs)',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-app)',
+                      color: 'var(--text-primary)',
+                      marginBottom: 4,
+                    }}
+                  />
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '2px 4px', fontWeight: 'bold' }}>
+                    Projects
+                  </div>
+                  {projects
+                    .filter((p) => !mentionSearch || p.name.toLowerCase().includes(mentionSearch.toLowerCase()))
+                    .slice(0, 5)
+                    .map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleInsertMention(`#[${p.name}]`)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 6px',
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--text-primary)',
+                          borderRadius: 'var(--radius-xs)',
+                          fontSize: '11px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                        className="btn-ghost"
+                      >
+                        <Folder size={12} style={{ color: p.color || 'var(--color-primary)', flexShrink: 0 }} />
+                        <span className="truncate">{p.name}</span>
+                      </button>
+                    ))}
+
+                  {tasks.length > 0 && (
+                    <>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '4px 4px 2px 4px', fontWeight: 'bold', borderTop: '1px solid var(--border-subtle)', marginTop: 2 }}>
+                        Tasks
+                      </div>
+                      {tasks
+                        .filter((t) => !mentionSearch || t.title.toLowerCase().includes(mentionSearch.toLowerCase()))
+                        .slice(0, 5)
+                        .map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => handleInsertMention(`@[${t.title}]`)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '4px 6px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--text-primary)',
+                              borderRadius: 'var(--radius-xs)',
+                              fontSize: '11px',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                            }}
+                            className="btn-ghost"
+                          >
+                            <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            <span className="truncate">{t.title}</span>
+                          </button>
+                        ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Copy Description Button */}
             {onCopy && (
               <button
@@ -591,10 +994,22 @@ export const RichImageDescriptionEditor = ({
               return (
                 <div key={block.id} style={{ position: 'relative' }}>
                   <SpellCheckTextarea
+                    inputRef={(el) => {
+                      textareaRefs.current[block.id] = el;
+                    }}
                     rows={idx === 0 && blocks.length === 1 ? rows : Math.max(3, rows - 2)}
                     placeholder={idx === 0 ? placeholder : 'Continue writing description...'}
                     value={block.content}
-                    onChange={(e) => handleTextBlockChange(block.id, e.target.value)}
+                    onChange={(e) => {
+                      handleTextBlockChange(block.id, e.target.value);
+                      checkMentionTrigger(block.id, e.target);
+                    }}
+                    onKeyUp={(e) => {
+                      if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(e.key)) return;
+                      checkMentionTrigger(block.id, e.target);
+                    }}
+                    onClick={(e) => checkMentionTrigger(block.id, e.target)}
+                    onKeyDown={(e) => handleTextBlockKeyDown(e, block.id)}
                     onBlur={() => handleTextBlockBlur(block.id)}
                     onPaste={(e) => handlePaste(e, block.id)}
                     onDrop={(e) => handleDrop(e, block.id)}
@@ -844,7 +1259,115 @@ export const RichImageDescriptionEditor = ({
           <MarkdownRenderer
             content={value || '*No description written yet.*'}
             highlight={highlight}
+            onToggleCheckbox={handleTogglePreviewCheckbox}
           />
+        </div>
+      )}
+
+      {/* Floating Cursor Autocomplete Modal (like right-click modal) */}
+      {inlineMention && inlineMention.isOpen && (
+        <div
+          ref={mentionMenuRef}
+          className="glass-panel animate-pop"
+          style={{
+            position: 'fixed',
+            top: Math.min(window.innerHeight - 260, Math.max(10, inlineMention.coords.top)),
+            left: Math.min(window.innerWidth - 260, Math.max(10, inlineMention.coords.left)),
+            zIndex: 99999,
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-xl), 0 8px 32px rgba(0,0,0,0.4)',
+            padding: '4px',
+            minWidth: '220px',
+            maxWidth: '300px',
+            maxHeight: '240px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            fontSize: 'var(--text-xs)',
+            textAlign: 'left',
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div
+            style={{
+              padding: '4px 8px',
+              fontSize: '10px',
+              fontWeight: 'var(--font-weight-bold)',
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              borderBottom: '1px solid var(--border-subtle)',
+              marginBottom: 2,
+            }}
+          >
+            {inlineMention.type === 'project' ? 'Mention Project' : 'Mention Task'}
+          </div>
+          {inlineMentionItems.length > 0 ? (
+            inlineMentionItems.map((item, idx) => {
+              const isSelected = idx === inlineMention.selectedIndex;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  ref={(el) => {
+                    if (isSelected && el) el.scrollIntoView({ block: 'nearest' });
+                  }}
+                  className="btn-ghost"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    gap: 8,
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: 'none',
+                    backgroundColor: isSelected ? 'var(--bg-surface-active)' : 'transparent',
+                    color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)',
+                    fontSize: '11.5px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelectInlineMention(item);
+                  }}
+                  onClick={() => handleSelectInlineMention(item)}
+                  onMouseMove={() => {
+                    if (inlineMention.selectedIndex !== idx) {
+                      setInlineMention((prev) => (prev ? { ...prev, selectedIndex: idx } : null));
+                    }
+                  }}
+                >
+                  {inlineMention.type === 'project' ? (
+                    <Folder
+                      size={13}
+                      style={{ color: item.color || 'var(--color-primary)', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <FileText size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  )}
+                  <span
+                    className="truncate"
+                    style={{
+                      fontWeight: isSelected ? '600' : 'normal',
+                      textAlign: 'left',
+                      flex: 1,
+                    }}
+                  >
+                    {inlineMention.type === 'project' ? item.name : item.title}
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <div style={{ padding: '8px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+              No {inlineMention.type === 'project' ? 'projects' : 'tasks'} found
+            </div>
+          )}
         </div>
       )}
 

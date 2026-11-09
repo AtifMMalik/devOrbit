@@ -83,5 +83,36 @@ describe('Task Operations & Clipboard & Drafts', () => {
     assert.strictEqual(deserialized.isHotfix, true);
     assert.strictEqual(deserialized.subtasks.length, 1);
   });
+
+  it('reorders task to top and bottom within its column list', () => {
+    let tasks = [
+      { id: 't1', title: 'Task 1', status: 'current', projectId: 'p1' },
+      { id: 't2', title: 'Task 2', status: 'current', projectId: 'p1' },
+      { id: 't3', title: 'Task 3', status: 'current', projectId: 'p1' },
+    ];
+
+    // Move t3 to top
+    const targetTask = tasks.find((t) => t.id === 't3');
+    const otherTasks = tasks.filter((t) => t.id !== 't3');
+    const firstIndex = otherTasks.findIndex((t) => t.status === targetTask.status && t.projectId === targetTask.projectId);
+    otherTasks.splice(firstIndex === -1 ? 0 : firstIndex, 0, targetTask);
+    tasks = otherTasks;
+
+    assert.deepStrictEqual(tasks.map((t) => t.id), ['t3', 't1', 't2']);
+
+    // Move t3 to bottom
+    const otherTasks2 = tasks.filter((t) => t.id !== 't3');
+    let lastIndex = -1;
+    for (let i = otherTasks2.length - 1; i >= 0; i--) {
+      if (otherTasks2[i].status === targetTask.status && otherTasks2[i].projectId === targetTask.projectId) {
+        lastIndex = i;
+        break;
+      }
+    }
+    otherTasks2.splice(lastIndex + 1, 0, targetTask);
+    tasks = otherTasks2;
+
+    assert.deepStrictEqual(tasks.map((t) => t.id), ['t1', 't2', 't3']);
+  });
 });
 

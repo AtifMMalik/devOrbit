@@ -12,6 +12,8 @@ import {
   FileText,
   FileCode,
   Terminal,
+  ArrowUpToLine,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { TaskKanbanColumn } from './TaskKanbanColumn';
 import { TaskCard } from './TaskCard';
@@ -34,6 +36,8 @@ export const TaskKanbanBoard = ({
 }) => {
   const {
     reorderTasks,
+    moveTaskToTop,
+    moveTaskToBottom,
     updateTaskStatus,
     createTask,
     deleteMultipleTasks,
@@ -151,6 +155,20 @@ export const TaskKanbanBoard = ({
     if (!contextMenu) return;
     const count = pasteTasks(contextMenu.task.projectId, contextMenu.task.status);
     toastSuccess(`Pasted ${count} task(s)`);
+    setContextMenu(null);
+  };
+
+  const handleMoveToTopFromMenu = () => {
+    if (!contextMenu?.task) return;
+    moveTaskToTop(contextMenu.task.id);
+    toastSuccess(`Moved "${contextMenu.task.title}" to top`);
+    setContextMenu(null);
+  };
+
+  const handleMoveToBottomFromMenu = () => {
+    if (!contextMenu?.task) return;
+    moveTaskToBottom(contextMenu.task.id);
+    toastSuccess(`Moved "${contextMenu.task.title}" to bottom`);
     setContextMenu(null);
   };
 
@@ -725,6 +743,58 @@ export const TaskKanbanBoard = ({
               <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>⌘V</span>
             </button>
           )}
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 0' }} />
+
+          {/* Move to Top Option */}
+          <button
+            type="button"
+            onClick={handleMoveToTopFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              gap: 8,
+            }}
+            className="context-menu-item"
+          >
+            <ArrowUpToLine size={13} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Move to Top</span>
+          </button>
+
+          {/* Move to Bottom Option */}
+          <button
+            type="button"
+            onClick={handleMoveToBottomFromMenu}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              width: '100%',
+              padding: '6px 8px',
+              borderRadius: 'var(--radius-xs)',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              gap: 8,
+            }}
+            className="context-menu-item"
+          >
+            <ArrowDownToLine size={13} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+            <span style={{ textAlign: 'left' }}>Move to Bottom</span>
+          </button>
 
           <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '3px 0' }} />
 

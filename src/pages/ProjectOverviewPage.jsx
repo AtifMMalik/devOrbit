@@ -1,8 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import {
-  Layers,
-  CheckSquare,
   Plus,
   BookOpen,
   FileCode,
@@ -11,43 +9,69 @@ import {
   User,
   Globe,
   ExternalLink,
-  FileText,
   Edit3,
+  CheckSquare,
+  Check,
+  X,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useToast } from '../context/ToastContext';
 import { useProjectStats } from '../hooks/useProjectStats';
 import { ProjectHeader } from '../components/projects/ProjectHeader';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { MarkdownSyncModal } from '../components/tasks/MarkdownSyncModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Button } from '../components/common/Button';
-import { TagBadge, PriorityBadge } from '../components/common/Badge';
-import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 import { GithubIcon } from '../components/common/Icons';
-import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
-import { generateActivityData } from '../utils/activityGenerator';
 import { BrandFooter } from '../components/common/BrandFooter';
 
 export const ProjectOverviewPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { onOpenNewProject, onOpenEditProject, onOpenNewTask } = useOutletContext();
-  const { getProject, getSubProjects, getProjectTasks, deleteProject, tasks, projects, notes } = useWorkspace();
+  const { onOpenNewProject, onOpenNewTask } = useOutletContext();
+  const {
+    getProject,
+    getSubProjects,
+    getProjectTasks,
+    deleteProject,
+    updateProject,
+  } = useWorkspace();
+  const { toastSuccess } = useToast();
 
   const [isMarkdownSyncOpen, setIsMarkdownSyncOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deletingSubprojectId, setDeletingSubprojectId] = useState(null);
+
+  // In-place editing state
+  const [isEditingInPlace, setIsEditingInPlace] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [editLiveUrl, setEditLiveUrl] = useState('');
+  const [editGithubUrl, setEditGithubUrl] = useState('');
 
   const project = getProject(projectId);
   const subProjects = getSubProjects(projectId);
   const rollupTasks = getProjectTasks(projectId, true);
   const stats = useProjectStats(rollupTasks);
 
+  const hotfixTasksCount = useMemo(() => {
+    return rollupTasks.filter(
+      (t) => t.status === 'hotfix' || ((t.isHotfix || (t.tags && t.tags.includes('hotfix'))) && t.status !== 'done')
+    ).length;
+  }, [rollupTasks]);
+
   const deletingSubproject = subProjects.find((p) => p.id === deletingSubprojectId);
 
-  const calendarData = useMemo(() => {
-    return projectId ? generateActivityData(tasks, projects, notes, projectId, 365) : [];
-  }, [tasks, projects, notes, projectId]);
+  useEffect(() => {
+    if (project) {
+      setEditName(project.name || '');
+      setEditDescription(project.description || '');
+      setEditAuthor(project.author || '');
+      setEditLiveUrl(project.liveUrl || '');
+      setEditGithubUrl(project.githubUrl || '');
+    }
+  }, [project?.id, project?.name, project?.description, project?.author, project?.liveUrl, project?.githubUrl]);
 
   if (!project) {
     return (
@@ -72,6 +96,37 @@ export const ProjectOverviewPage = () => {
     }
   };
 
+  const handleStartInPlaceEdit = () => {
+    setEditName(project.name || '');
+    setEditDescription(project.description || '');
+    setEditAuthor(project.author || '');
+    setEditLiveUrl(project.liveUrl || '');
+    setEditGithubUrl(project.githubUrl || '');
+    setIsEditingInPlace(true);
+  };
+
+  const handleSaveInPlaceEdit = () => {
+    if (!editName.trim()) return;
+    updateProject(project.id, {
+      name: editName.trim(),
+      description: editDescription.trim(),
+      author: editAuthor.trim(),
+      liveUrl: editLiveUrl.trim(),
+      githubUrl: editGithubUrl.trim(),
+    });
+    setIsEditingInPlace(false);
+    toastSuccess('Project details updated!');
+  };
+
+  const handleCancelInPlaceEdit = () => {
+    setEditName(project.name || '');
+    setEditDescription(project.description || '');
+    setEditAuthor(project.author || '');
+    setEditLiveUrl(project.liveUrl || '');
+    setEditGithubUrl(project.githubUrl || '');
+    setIsEditingInPlace(false);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       {/* Project Header */}
@@ -80,18 +135,18 @@ export const ProjectOverviewPage = () => {
         onNewTask={onOpenNewTask}
         onNewSubproject={() => onOpenNewProject(project.id)}
         onOpenMarkdownSync={() => setIsMarkdownSyncOpen(true)}
-        onEditProject={() => onOpenEditProject(project)}
+        onEditProject={handleStartInPlaceEdit}
         onDeleteProject={() => setIsDeleteConfirmOpen(true)}
       />
 
       {/* Main Content */}
       <div className="page-container" style={{ padding: 'var(--space-6) var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: '1200px' }}>
-        {/* Metric Strip */}
+        {/* Metric Strip (includes hotfix matrix) */}
         <div
           className="metric-strip-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
             gap: 'var(--space-3)',
           }}
         >
@@ -124,48 +179,189 @@ export const ProjectOverviewPage = () => {
 
           <div className="card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
             <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Done
+              Completed
             </div>
             <div style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--status-done-text)', marginTop: 2 }}>
               {stats.done} <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'normal', color: 'var(--text-muted)' }}>({stats.total} total)</span>
             </div>
           </div>
+
+          <div className="card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+            <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Hot Fixes
+            </div>
+            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-bold)', color: '#f43f5e', marginTop: 2 }}>
+              {hotfixTasksCount}
+            </div>
+          </div>
         </div>
 
-        {/* Project Links & Author Bar */}
-        {(project.author || project.liveUrl || project.githubUrl || project.description) && (
+        {/* Project Details & In-Place Editing */}
+        {isEditingInPlace ? (
           <div
             className="card"
             style={{
               padding: 'var(--space-4)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 'var(--space-2-5)',
+              gap: 'var(--space-3)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--color-primary)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-primary)' }}>
+                Edit Project Details
+              </span>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <Button variant="secondary" size="sm" icon={X} onClick={handleCancelInPlaceEdit}>
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" icon={Check} onClick={handleSaveInPlaceEdit}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-3)' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Project Name *
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface-active)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-xs)',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Author
+                </label>
+                <input
+                  type="text"
+                  value={editAuthor}
+                  onChange={(e) => setEditAuthor(e.target.value)}
+                  placeholder="e.g. atifmalik"
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface-active)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-xs)',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Live Site URL
+                </label>
+                <input
+                  type="url"
+                  value={editLiveUrl}
+                  onChange={(e) => setEditLiveUrl(e.target.value)}
+                  placeholder="https://..."
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface-active)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-xs)',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                  GitHub Repo URL
+                </label>
+                <input
+                  type="url"
+                  value={editGithubUrl}
+                  onChange={(e) => setEditGithubUrl(e.target.value)}
+                  placeholder="https://github.com/..."
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface-active)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--text-xs)',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+                Description
+              </label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                placeholder="What is this project about?"
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-default)',
+                  backgroundColor: 'var(--bg-surface-active)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--text-xs)',
+                  lineHeight: 1.5,
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
               backgroundColor: 'var(--bg-surface)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                {project.author && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--text-secondary)',
-                      backgroundColor: 'var(--bg-surface-active)',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--border-subtle)',
-                    }}
-                  >
-                    <User size={13} style={{ color: 'var(--color-primary)' }} />
-                    Author: <strong style={{ color: 'var(--text-primary)' }}>{project.author}</strong>
-                  </span>
-                )}
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontSize: 'var(--text-xs)',
+                    color: project.author ? 'var(--text-secondary)' : 'var(--text-muted)',
+                    backgroundColor: 'var(--bg-surface-active)',
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <User size={13} style={{ color: project.author ? 'var(--color-primary)' : 'var(--text-muted)' }} />
+                  Author: {project.author ? <strong style={{ color: 'var(--text-primary)' }}>{project.author}</strong> : <span style={{ fontStyle: 'italic' }}>not available</span>}
+                </span>
 
-                {project.liveUrl && (
+                {project.liveUrl ? (
                   <a
                     href={project.liveUrl}
                     target="_blank"
@@ -188,9 +384,26 @@ export const ProjectOverviewPage = () => {
                     Live Site
                     <ExternalLink size={11} />
                   </a>
+                ) : (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--text-muted)',
+                      backgroundColor: 'var(--bg-surface-active)',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <Globe size={13} style={{ color: 'var(--text-muted)' }} />
+                    Live Site: <span style={{ fontStyle: 'italic' }}>not available</span>
+                  </span>
                 )}
 
-                {project.githubUrl && (
+                {project.githubUrl ? (
                   <a
                     href={project.githubUrl}
                     target="_blank"
@@ -213,6 +426,23 @@ export const ProjectOverviewPage = () => {
                     GitHub Repo
                     <ExternalLink size={11} />
                   </a>
+                ) : (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--text-muted)',
+                      backgroundColor: 'var(--bg-surface-active)',
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <GithubIcon size={13} style={{ color: 'var(--text-muted)' }} />
+                    GitHub: <span style={{ fontStyle: 'italic' }}>not available</span>
+                  </span>
                 )}
               </div>
 
@@ -220,59 +450,23 @@ export const ProjectOverviewPage = () => {
                 variant="ghost"
                 size="sm"
                 icon={Edit3}
-                onClick={() => onOpenEditProject(project)}
+                onClick={handleStartInPlaceEdit}
               >
                 Edit Details
               </Button>
             </div>
 
-            {project.description && (
-              <p style={{ margin: '4px 0 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {project.description}
+            {/* Description Section with explicit title */}
+            <div style={{ marginTop: 'var(--space-1)' }}>
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Description
+              </span>
+              <p style={{ margin: '6px 0 0 0', fontSize: 'var(--text-xs)', color: project.description ? 'var(--text-secondary)' : 'var(--text-muted)', lineHeight: 1.6, fontStyle: project.description ? 'normal' : 'italic' }}>
+                {project.description || 'not available'}
               </p>
-            )}
+            </div>
           </div>
         )}
-
-        {/* Project README.md Section */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-4) var(--space-5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-3)',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid var(--border-default)',
-              paddingBottom: 'var(--space-2)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <FileText size={16} style={{ color: 'var(--color-primary)' }} />
-              <span style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-xs)', color: 'var(--text-primary)' }}>
-                README.md
-              </span>
-            </div>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={Edit3}
-              onClick={() => onOpenEditProject(project)}
-            >
-              Edit README
-            </Button>
-          </div>
-
-          <MarkdownRenderer content={project.readme || '# ' + project.name + '\n\nNo README.md documentation added yet. Click "Edit README" above to document your project.'} />
-        </div>
 
         {/* Sub-Projects Hierarchy Grid */}
         <div>
@@ -310,7 +504,9 @@ export const ProjectOverviewPage = () => {
                 <ProjectCard
                   key={child.id}
                   project={child}
-                  onEdit={onOpenEditProject}
+                  onEdit={(p) => {
+                    navigate(`/project/${p.id}/overview`);
+                  }}
                   onDelete={(id) => setDeletingSubprojectId(id)}
                   onAddSubproject={(parentId) => onOpenNewProject(parentId)}
                 />
@@ -333,14 +529,13 @@ export const ProjectOverviewPage = () => {
           )}
         </div>
 
-        {/* Tools & Details */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-          {/* Quick Tools */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-              Project Tools
-            </span>
-            
+        {/* Project Tools */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
+            Project Tools
+          </span>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-2-5)' }}>
             <div
               onClick={() => navigate(`/project/${project.id}/tasks`)}
               className="card-hoverable"
@@ -433,67 +628,10 @@ export const ProjectOverviewPage = () => {
               <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
             </div>
           </div>
-
-          {/* Tags & Categories */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-              Tags & Priorities
-            </span>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1-5)' }}>
-              {Object.entries(stats.tagCounts).map(([tag, count]) => (
-                <div
-                  key={tag}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '2px 6px',
-                    borderRadius: 'var(--radius-xs)',
-                    backgroundColor: 'var(--bg-surface-active)',
-                    fontSize: '11px',
-                  }}
-                >
-                  <TagBadge tag={tag} />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{count}</span>
-                </div>
-              ))}
-              {Object.keys(stats.tagCounts).length === 0 && (
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>No tags yet.</span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-2)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'var(--text-muted)' }}>
-                <PriorityBadge priority="urgent" />
-                <span>{stats.priorityCounts.urgent}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'var(--text-muted)' }}>
-                <PriorityBadge priority="high" />
-                <span>{stats.priorityCounts.high}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'var(--text-muted)' }}>
-                <PriorityBadge priority="medium" />
-                <span>{stats.priorityCounts.medium}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'var(--text-muted)' }}>
-                <PriorityBadge priority="low" />
-                <span>{stats.priorityCounts.low}</span>
-              </div>
-            </div>
-          </div>
         </div>
-
-        {/* Project Activity Contribution Heatmap */}
-        <ActivityHeatmap
-          data={calendarData}
-          title="Project Velocity & Contributions"
-          subtitle="Engineering contribution history for this project's tasks, checklists, and notes"
-          showStats
-        />
       </div>
 
-      {/* Brand Footer at end of project home screen (Requirement 6) */}
+      {/* Brand Footer */}
       <BrandFooter tagline="Orbit your development workflow with clarity and speed" />
 
       {/* Markdown Sync Modal */}

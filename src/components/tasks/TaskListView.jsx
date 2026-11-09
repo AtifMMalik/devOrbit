@@ -19,7 +19,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { StatusBadge, PriorityBadge, TagBadge } from '../common/Badge';
-import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { MarkdownRenderer, toggleChecklistInMarkdown } from '../common/MarkdownRenderer';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -29,10 +29,16 @@ export const TaskListView = ({
   onDeleteTask,
 }) => {
   const navigate = useNavigate();
-  const { updateTaskStatus, toggleSubtask, reorderTasks, projects, searchKeyword } = useWorkspace();
+  const { updateTask, updateTaskStatus, toggleSubtask, reorderTasks, projects, searchKeyword } = useWorkspace();
   const { toastSuccess } = useToast();
   const [activeDropTarget, setActiveDropTarget] = useState({ id: null, position: null });
   const [copiedTaskId, setCopiedTaskId] = useState(null);
+
+  const handleToggleDescChecklist = (task, targetIdx) => {
+    if (!task) return;
+    const updated = toggleChecklistInMarkdown(task.description || '', targetIdx);
+    updateTask(task.id, { description: updated });
+  };
 
   if (tasks.length === 0) {
     return (
@@ -394,7 +400,12 @@ export const TaskListView = ({
                 {/* Description */}
                 {task.description && (
                   <div style={{ marginBottom: 'var(--space-2)' }}>
-                    <MarkdownRenderer content={task.description} compact highlight={searchKeyword} />
+                    <MarkdownRenderer
+                      content={task.description}
+                      compact
+                      highlight={searchKeyword}
+                      onToggleCheckbox={(idx) => handleToggleDescChecklist(task, idx)}
+                    />
                   </div>
                 )}
 

@@ -23,7 +23,6 @@ import {
 import { Button } from '../components/common/Button';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
-import { StatusBadge, PriorityBadge } from '../components/common/Badge';
 import { BrandFooter } from '../components/common/BrandFooter';
 import { SpellCheckInput, SpellCheckTextarea } from '../components/common/SpellCheckField';
 import { RichImageDescriptionEditor } from '../components/common/RichImageDescriptionEditor';
@@ -625,11 +624,11 @@ export const CreateTaskPage = () => {
             <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-bold)', margin: 0, color: 'var(--text-primary)' }}>
               {isEditing ? 'Edit Task' : 'Create New Task'}
             </h1>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-              {isEditing
-                ? `Update specifications, prompts, checklists, and state for "${targetProject?.name || 'Project'}".`
-                : 'Define requirements, prompt specifications, acceptance subtasks, and priority.'}
-            </p>
+            {isEditing && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Update specifications, prompts, and state for "{targetProject?.name || 'Project'}".
+              </p>
+            )}
           </div>
         </div>
 
@@ -812,20 +811,18 @@ export const CreateTaskPage = () => {
       )}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        {/* Project Selector & Hotfix Toggle Row */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-4) var(--space-5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 'var(--space-3)',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flex: 1, minWidth: '220px' }}>
+        {/* Project Selector (Shown in Edit Mode) */}
+        {isEditing && (
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-3) var(--space-5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
             <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
               Target Project:
             </label>
@@ -850,51 +847,58 @@ export const CreateTaskPage = () => {
               ))}
             </select>
           </div>
+        )}
 
-          {/* Hotfix Toggle Pill */}
-          <button
-            type="button"
-            onClick={handleToggleHotfix}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              border: `1px solid ${isHotfix ? '#f43f5e' : 'var(--border-default)'}`,
-              backgroundColor: isHotfix ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-app)',
-              color: isHotfix ? '#f43f5e' : 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 'var(--font-weight-semibold)',
-              transition: 'all var(--transition-fast)',
-            }}
-            title="Mark as emergency Hot Fix — automatically categorizes into Hotfix list"
-          >
-            <Flame size={14} style={{ color: isHotfix ? '#f43f5e' : 'var(--text-muted)' }} />
-            <span>HOT FIX {isHotfix ? 'ACTIVE' : 'OFF'}</span>
-          </button>
-        </div>
-
-        {/* Task Title */}
+        {/* Task Title with Description-style header & Hotfix toggle */}
         <div
           className="card"
           style={{
             padding: 'var(--space-5)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--space-2)',
+            gap: 'var(--space-3)',
             backgroundColor: 'var(--bg-surface)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-            <StatusBadge status={status} />
-            <PriorityBadge priority={priority} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckSquare size={15} style={{ color: 'var(--color-primary)' }} />
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Task Title <span style={{ color: '#f43f5e' }}>*</span>
+              </span>
+            </div>
+
+            {/* Hotfix Toggle Pill in front of Task Title */}
+            <button
+              type="button"
+              onClick={handleToggleHotfix}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                border: `1px solid ${isHotfix ? '#f43f5e' : 'var(--border-default)'}`,
+                backgroundColor: isHotfix ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-app)',
+                color: isHotfix ? '#f43f5e' : 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: 'var(--font-weight-semibold)',
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Mark as emergency Hot Fix — automatically categorizes into Hotfix list"
+            >
+              <Flame size={13} style={{ color: isHotfix ? '#f43f5e' : 'var(--text-muted)' }} />
+              <span>HOT FIX {isHotfix ? 'ACTIVE' : 'OFF'}</span>
+            </button>
           </div>
 
-          <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)' }}>
-            Task Title <span style={{ color: '#f43f5e' }}>*</span>
-          </label>
           <SpellCheckInput
             type="text"
             placeholder="e.g. Implement resilient WebSocket connection retry logic..."
@@ -1004,91 +1008,6 @@ export const CreateTaskPage = () => {
               {highlightText(taskPrompt, searchKeyword)}
             </div>
           )}
-
-          <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
-            One-click copyable from task cards on the Kanban board for fast pairing.
-          </p>
-        </div>
-
-        {/* Subtasks Checklist */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-4) var(--space-5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-3)',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-            Subtasks Checklist ({subtasks.filter((s) => s.completed).length}/{subtasks.length})
-          </span>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {subtasks.map((sub) => (
-              <div
-                key={sub.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-2)',
-                  padding: '6px 10px',
-                  backgroundColor: 'var(--bg-app)',
-                  borderRadius: 'var(--radius-xs)',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => handleToggleSubtask(sub.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: sub.completed ? 'var(--status-done-solid)' : 'var(--text-muted)' }}
-                >
-                  {sub.completed ? <CheckSquare size={16} /> : <Square size={16} />}
-                </button>
-                <span
-                  style={{
-                    flex: 1,
-                    fontSize: 'var(--text-xs)',
-                    color: sub.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                    textDecoration: sub.completed ? 'line-through' : 'none',
-                  }}
-                >
-                  {highlightText(sub.text, searchKeyword)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSubtask(sub.id)}
-                  className="btn-icon btn-icon-danger"
-                  style={{ width: 20, height: 20 }}
-                  title="Remove subtask"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <div style={{ flex: 1 }}>
-              <SpellCheckInput
-                type="text"
-                placeholder="Add acceptance subtask (e.g. Unit test edge cases)..."
-                value={newSubtaskText}
-                onChange={(e) => setNewSubtaskText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddSubtask();
-                  }
-                }}
-                style={{ fontSize: 'var(--text-xs)' }}
-              />
-            </div>
-            <Button type="button" variant="secondary" size="sm" onClick={handleAddSubtask}>
-              Add
-            </Button>
-          </div>
         </div>
 
         {/* Completion Note (Revealed when task is completed or has note) */}
@@ -1133,22 +1052,24 @@ export const CreateTaskPage = () => {
           style={{
             padding: 'var(--space-4) var(--space-5)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: isEditing ? 'repeat(auto-fit, minmax(200px, 1fr))' : '1fr 1fr',
             gap: 'var(--space-4)',
             backgroundColor: 'var(--bg-surface)',
           }}
         >
-          <div>
-            <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)', marginBottom: 4 }}>
-              Status
-            </label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="current">Current</option>
-              <option value="later">Later</option>
-              <option value="done">Done (Completed)</option>
-              <option value="hotfix">Hot Fix</option>
-            </select>
-          </div>
+          {isEditing && (
+            <div>
+              <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                Status
+              </label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="current">Current</option>
+                <option value="later">Later</option>
+                <option value="done">Done (Completed)</option>
+                <option value="hotfix">Hot Fix</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)', marginBottom: 4 }}>
@@ -1179,80 +1100,82 @@ export const CreateTaskPage = () => {
         </div>
 
         {/* Tags */}
-        <div
-          className="card"
-          style={{
-            padding: 'var(--space-4) var(--space-5)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-2-5)',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)' }}>
-            Tags
-          </label>
-          <input
-            type="text"
-            placeholder="Type tag and press Enter or comma..."
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleAddTag}
-            spellCheck={true}
-          />
+        {isEditing && (
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-4) var(--space-5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-2-5)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-secondary)' }}>
+              Tags
+            </label>
+            <input
+              type="text"
+              placeholder="Type tag and press Enter or comma..."
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleAddTag}
+              spellCheck={true}
+            />
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-            {tags.map((t) => (
-              <span
-                key={t}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 'var(--text-xs)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: t === 'hotfix' ? 'rgba(244, 63, 94, 0.15)' : 'var(--bg-surface-active)',
-                  color: t === 'hotfix' ? '#f43f5e' : 'var(--text-primary)',
-                  border: t === 'hotfix' ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-muted)',
-                }}
-              >
-                #{t}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(t)}
-                  style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 'var(--text-xs)',
+                    padding: '2px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: t === 'hotfix' ? 'rgba(244, 63, 94, 0.15)' : 'var(--bg-surface-active)',
+                    color: t === 'hotfix' ? '#f43f5e' : 'var(--text-primary)',
+                    border: t === 'hotfix' ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-muted)',
+                  }}
                 >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+                  #{t}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(t)}
+                    style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Quick add:</span>
-            {QUICK_TAGS.map((qt) => (
-              <button
-                key={qt}
-                type="button"
-                onClick={() => {
-                  if (!tags.includes(qt)) setTags([...tags, qt]);
-                }}
-                style={{
-                  fontSize: '10.5px',
-                  padding: '1px 6px',
-                  borderRadius: 'var(--radius-xs)',
-                  border: '1px dashed var(--border-default)',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                }}
-              >
-                +{qt}
-              </button>
-            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Quick add:</span>
+              {QUICK_TAGS.map((qt) => (
+                <button
+                  key={qt}
+                  type="button"
+                  onClick={() => {
+                    if (!tags.includes(qt)) setTags([...tags, qt]);
+                  }}
+                  style={{
+                    fontSize: '10.5px',
+                    padding: '1px 6px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: '1px dashed var(--border-default)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  +{qt}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Bottom Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', paddingBottom: 'var(--space-6)', flexWrap: 'wrap' }}>

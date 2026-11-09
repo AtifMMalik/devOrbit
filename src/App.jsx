@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
@@ -16,9 +16,15 @@ import { CreateProjectPage } from './pages/CreateProjectPage';
 import { CreateTaskPage } from './pages/CreateTaskPage';
 import { ProjectIdeasPage } from './pages/ProjectIdeasPage';
 import { CreateIdeaPage } from './pages/CreateIdeaPage';
+import { RecycleBinPage } from './pages/RecycleBinPage';
 
 export default function App() {
   const [isPreloading, setIsPreloading] = useState(true);
+
+  useEffect(() => {
+    const savedFontSize = localStorage.getItem('devorbit_platform_font_size') || '15px';
+    document.documentElement.style.fontSize = savedFontSize;
+  }, []);
 
   return (
     <ThemeProvider>
@@ -48,6 +54,7 @@ export default function App() {
                 <Route path="project/:projectId/overview" element={<ProjectOverviewPage />} />
                 <Route path="project/:projectId/notes" element={<ProjectNotesPage />} />
                 <Route path="project/:projectId/analytics" element={<ProjectAnalyticsPage />} />
+                <Route path="recycle-bin" element={<RecycleBinPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

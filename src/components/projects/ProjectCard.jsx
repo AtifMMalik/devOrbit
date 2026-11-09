@@ -109,23 +109,22 @@ export const ProjectCard = ({
             </span>
           )}
 
-          {subProjects.length > 0 && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3,
-                fontSize: '10px',
-                color: 'var(--text-muted)',
-                backgroundColor: 'var(--bg-surface-active)',
-                padding: '1px 5px',
-                borderRadius: 'var(--radius-xs)',
-              }}
-            >
-              <Layers size={10} />
-              {subProjects.length} sub-{subProjects.length === 1 ? 'project' : 'projects'}
-            </span>
-          )}
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              fontSize: '10px',
+              color: 'var(--text-muted)',
+              backgroundColor: 'var(--bg-surface-active)',
+              padding: '1px 5px',
+              borderRadius: 'var(--radius-xs)',
+            }}
+            title={`${subProjects.length} subprojects`}
+          >
+            <Layers size={10} />
+            {subProjects.length} {subProjects.length === 1 ? 'subproject' : 'subprojects'}
+          </span>
 
           {project.liveUrl && (
             <a

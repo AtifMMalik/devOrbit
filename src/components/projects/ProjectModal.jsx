@@ -39,8 +39,6 @@ export const ProjectModal = ({
   const [author, setAuthor] = useState('');
   const [liveUrl, setLiveUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
-  const [readme, setReadme] = useState('');
-  const [readmeTab, setReadmeTab] = useState('edit'); // 'edit' | 'preview'
   const [parentId, setParentId] = useState(initialParentId);
   const [color, setColor] = useState('#6366f1');
   const [logo, setLogo] = useState(null);
@@ -61,7 +59,6 @@ export const ProjectModal = ({
       setAuthor(editingProject.author || '');
       setLiveUrl(editingProject.liveUrl || '');
       setGithubUrl(editingProject.githubUrl || '');
-      setReadme(editingProject.readme || '');
       setParentId(editingProject.parentId || null);
       setColor(editingProject.color || '#6366f1');
       setLogo(editingProject.logo || null);
@@ -72,7 +69,6 @@ export const ProjectModal = ({
       setAuthor('');
       setLiveUrl('');
       setGithubUrl('');
-      setReadme('# Project Overview\n\nWelcome to this project. Document architecture, setup instructions, or notes here.');
       setParentId(initialParentId);
       setColor(COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)]);
       setLogo(null);
@@ -185,7 +181,6 @@ export const ProjectModal = ({
         author,
         liveUrl,
         githubUrl,
-        readme,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
         logo,
@@ -199,7 +194,6 @@ export const ProjectModal = ({
         author,
         liveUrl,
         githubUrl,
-        readme,
         parentId: parentId === 'root' || !parentId ? null : parentId,
         color,
         logo,
@@ -463,81 +457,7 @@ export const ProjectModal = ({
           </div>
         </div>
 
-        {/* README.md Markdown Section */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-1)' }}>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                fontSize: 'var(--text-xs)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <FileText size={12} />
-              Project README (Markdown)
-            </label>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button
-                type="button"
-                onClick={() => setReadmeTab('edit')}
-                style={{
-                  fontSize: '11px',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-xs)',
-                  backgroundColor: readmeTab === 'edit' ? 'var(--bg-surface-active)' : 'transparent',
-                  color: readmeTab === 'edit' ? 'var(--color-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <Edit3 size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setReadmeTab('preview')}
-                style={{
-                  fontSize: '11px',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-xs)',
-                  backgroundColor: readmeTab === 'preview' ? 'var(--bg-surface-active)' : 'transparent',
-                  color: readmeTab === 'preview' ? 'var(--color-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <Eye size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-                Preview
-              </button>
-            </div>
-          </div>
 
-          {readmeTab === 'edit' ? (
-            <textarea
-              rows={5}
-              placeholder="# Project Architecture & Specifications&#10;&#10;Document specifications, APIs, setup steps..."
-              value={readme}
-              onChange={(e) => setReadme(e.target.value)}
-              spellCheck={true}
-              style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px' }}
-            />
-          ) : (
-            <div
-              style={{
-                minHeight: '110px',
-                maxHeight: '200px',
-                overflowY: 'auto',
-                padding: 'var(--space-3)',
-                backgroundColor: 'var(--bg-app)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-default)',
-              }}
-            >
-              <MarkdownRenderer content={readme} />
-            </div>
-          )}
-        </div>
 
         {/* Color Palette & Custom Color Picker */}
         <div>

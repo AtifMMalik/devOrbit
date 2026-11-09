@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { ActivityCalendar } from 'react-activity-calendar';
-import { Flame, Calendar, Trophy, Zap } from 'lucide-react';
+import { Flame, Calendar, Zap } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { calculateProductivityStats } from '../../utils/activityGenerator';
 
 export const ActivityHeatmap = ({
   data = [],
   title = 'Work Activity & Contributions',
-  subtitle = 'Daily tasks, checklist completions & documentation history',
+  subtitle = '',
   showStats = true,
   maxDays = 365,
 }) => {
@@ -76,29 +76,6 @@ export const ActivityHeatmap = ({
             </p>
           )}
         </div>
-
-        {/* Developer Rank Badge */}
-        {showStats && (
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 'var(--space-1-5)',
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: `${stats.rankColor}18`,
-              border: `1px solid ${stats.rankColor}40`,
-              fontSize: '11px',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: stats.rankColor,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-            }}
-          >
-            <Trophy size={13} />
-            <span>{stats.developerLevel}</span>
-          </div>
-        )}
       </div>
 
       {/* Streak / Metric Quick Strip */}

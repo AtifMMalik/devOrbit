@@ -69,14 +69,13 @@ export const ProjectAnalyticsPage = () => {
         <ActivityHeatmap
           data={calendarData}
           title={`Activity & Velocity: ${project.name}`}
-          subtitle="Engineering contribution history of tasks, checklist items, and documentation updates for this project"
           showStats
         />
 
         {/* Detailed Progress & Quality Metrics */}
         <ProjectProgressChart
           analytics={analytics}
-          projectTitle={project.name}
+          showPriority={false}
         />
 
         {/* Sub-Projects Progress Breakdown if any exist */}

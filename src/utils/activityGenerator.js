@@ -161,37 +161,11 @@ export const calculateProductivityStats = (calendarData = []) => {
     }
   }
 
-  // Developer Level & Engineering Rank based on contributions
-  let developerLevel = 'Associate Engineer';
-  let developerRank = 1;
-  let rankColor = '#38bdf8';
-
-  if (totalContributions >= 50) {
-    developerLevel = 'Staff Software Engineer';
-    developerRank = 5;
-    rankColor = '#ec4899';
-  } else if (totalContributions >= 25) {
-    developerLevel = 'Senior Software Engineer';
-    developerRank = 4;
-    rankColor = '#8b5cf6';
-  } else if (totalContributions >= 10) {
-    developerLevel = 'Software Engineer II';
-    developerRank = 3;
-    rankColor = '#10b981';
-  } else if (totalContributions >= 3) {
-    developerLevel = 'Software Engineer I';
-    developerRank = 2;
-    rankColor = '#0084ff';
-  }
-
   return {
     totalContributions,
     activeDays,
     currentStreak,
     longestStreak,
-    developerLevel,
-    developerRank,
-    rankColor,
   };
 };
 
@@ -211,6 +185,9 @@ export const calculateProjectAnalytics = (project, allTasks = [], subProjects = 
   const currentCount = tasks.filter((t) => t.status === 'current').length;
   const laterCount = tasks.filter((t) => t.status === 'later').length;
   const doneCount = tasks.filter((t) => t.status === 'done').length;
+  const hotfixCount = tasks.filter(
+    (t) => t.status === 'hotfix' || ((t.isHotfix || (t.tags && t.tags.includes('hotfix'))) && t.status !== 'done')
+  ).length;
 
   const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
 
@@ -257,6 +234,7 @@ export const calculateProjectAnalytics = (project, allTasks = [], subProjects = 
     currentCount,
     laterCount,
     doneCount,
+    hotfixCount,
     completionRate,
     priorityCounts,
     todosCount: todos.length,

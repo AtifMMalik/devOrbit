@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Sun,
   Moon,
   Download,
   FolderPlus,
-  Laptop,
   RotateCw,
   PanelLeftOpen,
   Menu,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -33,6 +34,25 @@ export const Header = ({
   const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(
+    typeof document !== 'undefined' ? Boolean(document.fullscreenElement) : false
+  );
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  };
 
   const activeProject = activeProjectId ? getProject(activeProjectId) : null;
 
@@ -49,22 +69,6 @@ export const Header = ({
     const subInfo = stats.subProjectsCount > 0 ? ` (incl. ${stats.subProjectsCount} sub-projects)` : '';
     toastSuccess(`devOrbit backup downloaded: ${stats.projectsCount} projects${subInfo}, ${stats.tasksCount} tasks, ${stats.notesCount} docs`);
     setTimeout(() => setIsExportModalOpen(false), 800);
-  };
-
-  const handleInstallApp = async () => {
-    if (isInstalled) {
-      toastInfo('devOrbit is already running as a desktop app');
-      return;
-    }
-
-    if (isInstallable) {
-      const res = await promptInstall();
-      if (res.outcome === 'accepted') {
-        toastSuccess('devOrbit desktop app installed!');
-      }
-    } else {
-      toastInfo('To install devOrbit: click the install icon in your browser URL bar or Settings menu');
-    }
   };
 
   return (
@@ -125,45 +129,8 @@ export const Header = ({
         )}
       </div>
 
-      {/* Right: + New Project button, Install App, & Theme toggle */}
+      {/* Right: + New Project button, Backup Export, Reload app, Theme toggle, Fullscreen */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        {!isInstalled && (
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={Laptop}
-            onClick={handleInstallApp}
-            title="Download / Install devOrbit as a Desktop App (PWA)"
-            style={{
-              borderColor: isInstallable ? 'var(--color-primary)' : 'var(--border-default)',
-              backgroundColor: isInstallable ? 'var(--color-primary-light)' : 'transparent',
-              color: isInstallable ? 'var(--color-primary)' : 'var(--text-secondary)',
-            }}
-          >
-            {isInstallable ? 'Install App' : 'Download App'}
-          </Button>
-        )}
-
-        {isInstalled && (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: '11px',
-              padding: '3px 8px',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--bg-surface-active)',
-              color: 'var(--color-primary)',
-              border: '1px solid var(--border-subtle)',
-            }}
-            title="Running as Desktop App"
-          >
-            <Laptop size={12} />
-            Desktop App
-          </span>
-        )}
-
         <Button
           variant="primary"
           size="sm"
@@ -179,7 +146,15 @@ export const Header = ({
           New Project
         </Button>
 
-        {/* Reload PWA Button */}
+        <button
+          onClick={handleStartExport}
+          className="btn-icon"
+          title="Export JSON Backup"
+        >
+          <Download size={14} />
+        </button>
+
+        {/* Reload App / Refresh PWA Cache */}
         <button
           onClick={() => {
             toastInfo('Reloading devOrbit...');
@@ -214,21 +189,22 @@ export const Header = ({
           )}
         </button>
 
-        <button
-          onClick={handleStartExport}
-          className="btn-icon"
-          title="Export JSON Backup"
-        >
-          <Download size={14} />
-        </button>
-
-        {/* Theme Toggle */}
+        {/* Dark / Light Mode Toggle */}
         <button
           onClick={toggleTheme}
           className="btn-icon"
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
+
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={toggleFullscreen}
+          className="btn-icon"
+          title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+        >
+          {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
         </button>
       </div>
 

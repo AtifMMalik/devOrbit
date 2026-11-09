@@ -1,19 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  Plus,
   FolderPlus,
   TrendingUp,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useProjectStats } from '../hooks/useProjectStats';
 import { ProjectCard } from '../components/projects/ProjectCard';
-import { ProjectAvatar } from '../components/common/ProjectAvatar';
 import { Button } from '../components/common/Button';
-import { StatusBadge, PriorityBadge, TagBadge } from '../components/common/Badge';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
-import { ActivityHeatmap } from '../components/analytics/ActivityHeatmap';
-import { generateActivityData } from '../utils/activityGenerator';
 import { LandingWelcomeScreen } from '../components/landing/LandingWelcomeScreen';
 import { BrandFooter } from '../components/common/BrandFooter';
 
@@ -23,6 +18,12 @@ export const DashboardOverviewPage = () => {
   const stats = useProjectStats(tasks);
   const rootProjects = getRootProjects();
   const navigate = useNavigate();
+
+  const hotfixTasks = useMemo(() => {
+    return tasks.filter(
+      (t) => t.status === 'hotfix' || ((t.isHotfix || (t.tags && t.tags.includes('hotfix'))) && t.status !== 'done')
+    ).length;
+  }, [tasks]);
 
   const [deletingProjectId, setDeletingProjectId] = useState(null);
 
@@ -34,14 +35,6 @@ export const DashboardOverviewPage = () => {
       setDeletingProjectId(null);
     }
   };
-
-  const calendarData = useMemo(() => {
-    return generateActivityData(tasks, projects, notes, null, 365);
-  }, [tasks, projects, notes]);
-
-  const recentActiveTasks = tasks
-    .filter((t) => t.status === 'current' || t.status === 'later')
-    .slice(0, 5);
 
   // If no projects exist yet, display the landing / welcome screen!
   if (projects.length === 0) {
@@ -64,35 +57,6 @@ export const DashboardOverviewPage = () => {
           <h1 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 'var(--font-weight-semibold)' }}>
             Workspace Dashboard
           </h1>
-          <p style={{ marginTop: '2px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-            High-level overview of projects, active task delivery, and velocity metrics.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={FolderPlus}
-            onClick={() => onOpenNewProject(null)}
-            title="Create New Project (⌘⇧N)"
-            style={{
-              backgroundColor: '#6366f1',
-              borderColor: '#4f46e5',
-              color: '#ffffff',
-            }}
-          >
-            New Project
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            onClick={onOpenNewTask}
-            title="Create New Task (⌘N)"
-          >
-            New Task
-          </Button>
         </div>
       </div>
 
@@ -101,7 +65,7 @@ export const DashboardOverviewPage = () => {
         className="dashboard-stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: 'var(--space-3)',
         }}
       >
@@ -140,15 +104,16 @@ export const DashboardOverviewPage = () => {
             {stats.done} <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'normal', color: 'var(--text-muted)' }}>({stats.completionRate}%)</span>
           </div>
         </div>
-      </div>
 
-      {/* Engineering Contribution Heatmap */}
-      <ActivityHeatmap
-        data={calendarData}
-        title="Developer Activity & Momentum"
-        subtitle="365-day engineering contribution record of workspace activities"
-        showStats
-      />
+        <div className="card" style={{ padding: 'var(--space-3) var(--space-4)' }}>
+          <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Hot Fixes
+          </div>
+          <div style={{ fontSize: 'var(--text-xl)', fontWeight: 'var(--font-weight-bold)', color: '#f43f5e', marginTop: 2 }}>
+            {hotfixTasks}
+          </div>
+        </div>
+      </div>
 
       {/* Projects Grid */}
       <div>
@@ -223,71 +188,6 @@ export const DashboardOverviewPage = () => {
           </div>
         )}
       </div>
-
-      {/* Active Focus Tasks */}
-      {recentActiveTasks.length > 0 && (
-        <div style={{ marginTop: 'var(--space-2)' }}>
-          <div style={{ marginBottom: 'var(--space-2)' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-              Recent Active Tasks
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {recentActiveTasks.map((task) => {
-              const proj = projects.find((p) => p.id === task.projectId);
-              return (
-                <div
-                  key={task.id}
-                  onClick={() => proj && navigate(`/project/${proj.id}/tasks`)}
-                  className="card-hoverable"
-                  style={{
-                    padding: 'var(--space-2-5) var(--space-3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 'var(--space-3)',
-                    backgroundColor: 'var(--bg-surface)',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0, flex: 1 }}>
-                    <StatusBadge status={task.status} />
-                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--text-xs)', color: 'var(--text-primary)' }} className="truncate">
-                      {task.title}
-                    </span>
-                    {proj && (
-                      <span
-                        style={{
-                          fontSize: '10px',
-                          color: 'var(--text-muted)',
-                          backgroundColor: 'var(--bg-surface-active)',
-                          padding: '2px 6px',
-                          borderRadius: 'var(--radius-xs)',
-                          flexShrink: 0,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <ProjectAvatar project={proj} size={12} />
-                        {proj.name}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
-                    {task.tags && task.tags.slice(0, 2).map((t) => <TagBadge key={t} tag={t} />)}
-                    <PriorityBadge priority={task.priority} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Brand Footer at end of home overview screen (Requirement 6) */}
       <BrandFooter tagline="Orbit your development workflow with clarity and speed" />

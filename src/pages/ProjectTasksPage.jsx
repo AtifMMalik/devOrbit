@@ -371,29 +371,22 @@ export const ProjectTasksPage = () => {
                 </div>
               </form>
             ) : (
-              <button
-                type="button"
-                onClick={() => setIsAddingList(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  width: '100%',
-                  padding: '10px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px dashed var(--border-default)',
-                  backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                <Plus size={14} style={{ color: 'var(--color-primary)' }} />
-                <span>Add List (e.g. Procedures, QA, Deployment)</span>
-              </button>
+              <div style={{ width: '100%', margin: '6px 0' }}>
+                <Button
+                  variant="primary"
+                  icon={Plus}
+                  onClick={() => setIsAddingList(true)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 18px',
+                    justifyContent: 'center',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 'var(--font-weight-medium)',
+                  }}
+                >
+                  Add List
+                </Button>
+              </div>
             )}
           </div>
         </div>

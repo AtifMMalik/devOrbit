@@ -213,6 +213,8 @@ export const SpellCheckTextarea = ({
   onPaste,
   onDrop,
   onDragOver,
+  inputRef,
+  onKeyDown,
   ...rest
 }) => {
   const [activeError, setActiveError] = useState(null);
@@ -368,15 +370,32 @@ export const SpellCheckTextarea = ({
 
       {/* Main Transparent Textarea */}
       <textarea
-        ref={textareaRef}
+        ref={(el) => {
+          textareaRef.current = el;
+          if (typeof inputRef === 'function') inputRef(el);
+          else if (inputRef) inputRef.current = el;
+        }}
         value={value}
         onChange={onChange}
         onScroll={handleScroll}
-        onClick={handlePointerOrCaret}
-        onKeyUp={handlePointerOrCaret}
+        onClick={(e) => {
+          handlePointerOrCaret(e);
+          if (rest.onClick) rest.onClick(e);
+        }}
+        onKeyUp={(e) => {
+          handlePointerOrCaret(e);
+          if (rest.onKeyUp) rest.onKeyUp(e);
+        }}
+        onKeyDown={onKeyDown}
         onContextMenu={handleContextMenu}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={(e) => {
+          setIsFocused(true);
+          if (rest.onFocus) rest.onFocus(e);
+        }}
+        onBlur={(e) => {
+          setIsFocused(false);
+          if (rest.onBlur) rest.onBlur(e);
+        }}
         onPaste={onPaste}
         onDrop={onDrop}
         onDragOver={onDragOver}

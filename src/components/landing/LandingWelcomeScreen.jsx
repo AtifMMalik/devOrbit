@@ -28,11 +28,10 @@ export const LandingWelcomeScreen = ({ onNewProject }) => {
       author: 'devOrbit Engineering',
       liveUrl: 'https://devorbit.app',
       githubUrl: 'https://github.com/atifmalik/devOrbit',
-      readme: `# devOrbit Platform Architecture\n\nWelcome to **devOrbit** — the developer-first workspace engineered for tracking projects, tasks, checklists, and momentum.\n\n### Core Pillars\n- **Agile Task Delivery**: Kanban board with Current, Later, and collapsible Done queues.\n- **Prompt Engineering**: One-click copyable task prompts for AI pairing & code generators.\n- **Quality & Reliability**: Dedicated To-Dos and Testing checklists on every project.\n- **Recycle Bin**: 30-day recoverable soft delete.`,
       color: '#0084ff',
       tags: ['core', 'engineering', 'pwa'],
       todos: [
-        { id: 'todo_welcome_1', text: 'Review project README and architecture contracts', completed: true },
+        { id: 'todo_welcome_1', text: 'Review project documentation and architecture contracts', completed: true },
         { id: 'todo_welcome_2', text: 'Test keyboard shortcuts (⌘F search, ⌘N new task, ⌘T sidebar)', completed: false },
       ],
       testing: [

@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { RecycleBinModal } from '../tasks/RecycleBinModal';
 import { ToastContainer } from '../common/ToastContainer';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
@@ -27,8 +26,6 @@ export const AppLayout = () => {
   const [isMobile, setIsMobile] = useState(() => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   });
-
-  const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false);
 
   // Track window resize for responsive mobile view
   useEffect(() => {
@@ -122,9 +119,6 @@ export const AppLayout = () => {
         toastInfo(res.message);
       }
     },
-    onEscape: () => {
-      setIsRecycleBinOpen(false);
-    },
   });
 
   return (
@@ -138,7 +132,7 @@ export const AppLayout = () => {
         onAddProject={() => handleOpenNewProject(null)}
         onAddSubproject={(parentId) => handleOpenNewProject(parentId)}
         onEditProject={(p) => handleOpenEditProject(p)}
-        onOpenRecycleBin={() => setIsRecycleBinOpen(true)}
+        onOpenRecycleBin={() => navigate('/recycle-bin')}
         isMobile={isMobile}
       />
 
@@ -171,7 +165,7 @@ export const AppLayout = () => {
               onOpenEditProject: handleOpenEditProject,
               onOpenNewTask: handleOpenNewTask,
               onOpenEditTask: handleOpenEditTask,
-              onOpenRecycleBin: () => setIsRecycleBinOpen(true),
+              onOpenRecycleBin: () => navigate('/recycle-bin'),
             }}
           />
         </main>
@@ -190,12 +184,6 @@ export const AppLayout = () => {
           <kbd style={{ fontSize: '10px', opacity: 0.85, marginLeft: 4, fontFamily: 'var(--font-mono)' }}>⌘N</kbd>
         </button>
       )}
-
-      {/* Recycle Bin Modal */}
-      <RecycleBinModal
-        isOpen={isRecycleBinOpen}
-        onClose={() => setIsRecycleBinOpen(false)}
-      />
 
       {/* Toast Notification Container */}
       <ToastContainer />

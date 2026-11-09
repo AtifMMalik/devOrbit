@@ -18,7 +18,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { PriorityBadge, TagBadge } from '../common/Badge';
-import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { MarkdownRenderer, toggleChecklistInMarkdown } from '../common/MarkdownRenderer';
 import { highlightText } from '../../utils/searchHighlight';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
@@ -51,6 +51,34 @@ export const TaskCard = ({
   const isCut = clipboard?.action === 'cut' && Array.isArray(clipboard?.taskIds) && clipboard.taskIds.includes(task.id);
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter((s) => s.completed).length;
+
+  const descChecklist = React.useMemo(() => {
+    if (!task.description) return { total: 0, completed: 0, items: [] };
+    const regex = /(?:^|\n)[ \t]*(?:[-*]\s*)?\[([.xX\s]*)\]\s*([^\n]+)/g;
+    let match;
+    const items = [];
+    let completed = 0;
+    while ((match = regex.exec(task.description)) !== null) {
+      const isDone = match[1] === '.' || match[1].toLowerCase() === 'x';
+      if (isDone) completed++;
+      items.push({ text: match[2].trim(), completed: isDone });
+    }
+    return { total: items.length, completed, items };
+  }, [task.description]);
+
+  const totalChecklists = descChecklist.total > 0 ? descChecklist.total : subtasks.length;
+  const completedChecklists = descChecklist.total > 0 ? descChecklist.completed : completedSubtasks;
+
+  const handleToggleDescChecklist = (arg1, arg2) => {
+    const targetItemIdx = typeof arg1 === 'number' ? arg1 : arg2;
+    if (arg1 && arg1.preventDefault) {
+      arg1.preventDefault();
+      arg1.stopPropagation();
+    }
+    if (!task.description) return;
+    const newDesc = toggleChecklistInMarkdown(task.description, targetItemIdx);
+    updateTask(task.id, { description: newDesc });
+  };
 
   const handleStatusToggle = (e) => {
     e.preventDefault();
@@ -513,17 +541,17 @@ export const TaskCard = ({
                 color: 'var(--text-muted)',
               }}
             >
-              {subtasks.length > 0 && (
+              {totalChecklists > 0 && (
                 <span
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 3,
-                    color: completedSubtasks === subtasks.length ? 'var(--status-done-solid)' : 'var(--text-muted)',
+                    color: completedChecklists === totalChecklists ? 'var(--status-done-solid)' : 'var(--text-muted)',
                   }}
                 >
                   <CheckSquare size={11} />
-                  {completedSubtasks}/{subtasks.length}
+                  {completedChecklists}/{totalChecklists}
                 </span>
               )}
 
@@ -557,7 +585,7 @@ export const TaskCard = ({
                 marginTop: 'var(--space-2)',
                 marginLeft: '32px',
                 padding: 'var(--space-2)',
-                backgroundColor: 'var(--bg-app)',
+                backgroundColor: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-xs)',
                 border: '1px solid var(--border-default)',
                 fontSize: '11px',
@@ -644,8 +672,8 @@ export const TaskCard = ({
             <div
               style={{
                 marginBottom: 'var(--space-2)',
-                padding: 'var(--space-2)',
-                backgroundColor: 'var(--bg-app)',
+                padding: 'var(--space-2-5) var(--space-3)',
+                backgroundColor: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-xs)',
                 border: '1px solid var(--border-subtle)',
               }}
@@ -683,7 +711,12 @@ export const TaskCard = ({
                   )}
                 </button>
               </div>
-              <MarkdownRenderer content={task.description} compact highlight={searchKeyword} />
+              <MarkdownRenderer
+                content={task.description}
+                compact
+                highlight={searchKeyword}
+                onToggleCheckbox={handleToggleDescChecklist}
+              />
             </div>
           )}
 
@@ -706,8 +739,8 @@ export const TaskCard = ({
             </div>
           )}
 
-          {/* Subtasks Checklist */}
-          {subtasks.length > 0 && (
+          {/* Legacy Subtasks Checklist if no description checklist */}
+          {descChecklist.total === 0 && subtasks.length > 0 && (
             <div style={{ marginBottom: 'var(--space-2)' }}>
               <div
                 style={{

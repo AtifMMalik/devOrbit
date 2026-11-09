@@ -69,6 +69,7 @@ export const ExportIssuesModal = ({
     return baseList.filter((t) => {
       const norm = (t.status || 'current').toLowerCase();
       if (selectedList === 'hotfix') {
+        if (norm === 'done') return false;
         return norm === 'hotfix' || Boolean(t.isHotfix) || (t.tags && t.tags.includes('hotfix'));
       }
       return norm === selectedList;

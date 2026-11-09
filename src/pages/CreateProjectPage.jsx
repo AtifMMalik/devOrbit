@@ -75,8 +75,6 @@ export const CreateProjectPage = () => {
   const [author, setAuthor] = useState(existingProject?.author || '');
   const [liveUrl, setLiveUrl] = useState(existingProject?.liveUrl || '');
   const [githubUrl, setGithubUrl] = useState(existingProject?.githubUrl || '');
-  const [readme, setReadme] = useState(existingProject?.readme || '');
-  const [readmeTab, setReadmeTab] = useState('edit'); // 'edit' | 'preview'
   const [tags, setTags] = useState(existingProject?.tags || []);
   const [tagInput, setTagInput] = useState('');
 
@@ -91,7 +89,6 @@ export const CreateProjectPage = () => {
       setAuthor(existingProject.author || '');
       setLiveUrl(existingProject.liveUrl || '');
       setGithubUrl(existingProject.githubUrl || '');
-      setReadme(existingProject.readme || '');
       setParentId(existingProject.parentId || null);
       setColor(existingProject.color || '#6366f1');
       setLogo(existingProject.logo || null);
@@ -216,7 +213,6 @@ export const CreateProjectPage = () => {
       author: author.trim(),
       liveUrl: liveUrl.trim(),
       githubUrl: githubUrl.trim(),
-      readme,
       parentId: parentId === 'root' || !parentId ? null : parentId,
       color,
       logo,
@@ -238,7 +234,7 @@ export const CreateProjectPage = () => {
       toastSuccess(`Created project "${name}" successfully`);
       navigate(`/project/${newProj.id}/tasks`);
     }
-  }, [name, description, author, liveUrl, githubUrl, readme, parentId, color, logo, tags, targetFeatures, isEditing, existingProject, updateProject, createProject, addProjectTodo, setActiveProjectId, navigate, toastError, toastSuccess]);
+  }, [name, description, author, liveUrl, githubUrl, parentId, color, logo, tags, targetFeatures, isEditing, existingProject, updateProject, createProject, addProjectTodo, setActiveProjectId, navigate, toastError, toastSuccess]);
 
   // Support global Cmd + S shortcut to save project
   useEffect(() => {
@@ -292,7 +288,7 @@ export const CreateProjectPage = () => {
             </h1>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
               {isEditing
-                ? 'Update project deliverables, repository links, README documentation, and visual accent.'
+                ? 'Update project deliverables, repository links, and visual accent.'
                 : 'Step 1 captures essential identity; Step 2 captures optional project idea & roadmap details.'}
             </p>
           </div>
@@ -721,7 +717,7 @@ export const CreateProjectPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Sparkles size={16} style={{ color: 'var(--color-primary)' }} />
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                  <strong>Step 2 is optional.</strong> Fill out project roadmap deliverables, README specs, and attribution, or click <strong>Skip & Save Project</strong> below.
+                  <strong>Step 2 is optional.</strong> Fill out project roadmap deliverables and attribution, or click <strong>Skip & Save Project</strong> below.
                 </span>
               </div>
               <Button type="button" variant="primary" size="sm" onClick={handleSubmit}>
@@ -871,87 +867,7 @@ export const CreateProjectPage = () => {
               </div>
             </div>
 
-            {/* Section 6: Specifications & Architecture (README.md) */}
-            <div
-              className="card"
-              style={{
-                padding: 'var(--space-5)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-3)',
-                backgroundColor: 'var(--bg-surface)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <FileText size={14} style={{ color: 'var(--color-primary)' }} />
-                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
-                    Project README (README.md Specifications)
-                  </span>
-                </div>
 
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    type="button"
-                    onClick={() => setReadmeTab('edit')}
-                    style={{
-                      fontSize: '11px',
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-xs)',
-                      border: readmeTab === 'edit' ? '1px solid var(--border-active)' : '1px solid transparent',
-                      backgroundColor: readmeTab === 'edit' ? 'var(--bg-surface-active)' : 'transparent',
-                      color: readmeTab === 'edit' ? 'var(--text-primary)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    <Edit3 size={11} /> Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReadmeTab('preview')}
-                    style={{
-                      fontSize: '11px',
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-xs)',
-                      border: readmeTab === 'preview' ? '1px solid var(--border-active)' : '1px solid transparent',
-                      backgroundColor: readmeTab === 'preview' ? 'var(--bg-surface-active)' : 'transparent',
-                      color: readmeTab === 'preview' ? 'var(--text-primary)' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    <Eye size={11} /> Preview
-                  </button>
-                </div>
-              </div>
-
-              {readmeTab === 'edit' ? (
-                <SpellCheckTextarea
-                  rows={6}
-                  placeholder="# Project Specifications&#10;&#10;Document APIs, architecture decisions, setup steps, or roadmap..."
-                  value={readme}
-                  onChange={(e) => setReadme(e.target.value)}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}
-                />
-              ) : (
-                <div
-                  style={{
-                    minHeight: '140px',
-                    padding: 'var(--space-4)',
-                    backgroundColor: 'var(--bg-app)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-default)',
-                  }}
-                >
-                  <MarkdownRenderer content={readme || '*No specifications written yet.*'} />
-                </div>
-              )}
-            </div>
 
             {/* Section 7: Tags */}
             <div

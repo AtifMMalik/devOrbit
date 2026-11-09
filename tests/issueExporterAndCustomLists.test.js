@@ -87,6 +87,26 @@ describe('Issue Exporter (Markdown & JSON) - Requirements 2 & 11', () => {
     assert.strictEqual(parsed[0].title, 'Database connection pool timeout');
     assert.strictEqual(parsed[0].priority, 'high');
   });
+
+  it('excludes completed hotfixes (status === done) when filtering for hotfix list', () => {
+    const tasksWithHotfixes = [
+      { id: 'h1', title: 'Active Hotfix 1', status: 'hotfix', isHotfix: true },
+      { id: 'h2', title: 'Tagged Active Hotfix', status: 'current', isHotfix: true, tags: ['hotfix'] },
+      { id: 'h3', title: 'Completed Hotfix', status: 'done', isHotfix: true, tags: ['hotfix'] },
+      { id: 'n1', title: 'Normal Done Task', status: 'done' },
+    ];
+
+    const activeHotfixes = tasksWithHotfixes.filter((t) => {
+      const norm = (t.status || 'current').toLowerCase();
+      if (norm === 'done') return false;
+      return norm === 'hotfix' || Boolean(t.isHotfix) || (t.tags && t.tags.includes('hotfix'));
+    });
+
+    assert.strictEqual(activeHotfixes.length, 2);
+    assert.strictEqual(activeHotfixes.map((t) => t.id).includes('h1'), true);
+    assert.strictEqual(activeHotfixes.map((t) => t.id).includes('h2'), true);
+    assert.strictEqual(activeHotfixes.map((t) => t.id).includes('h3'), false);
+  });
 });
 
 describe('Custom Lists & Project Ideas - Requirements 12 & 13', () => {

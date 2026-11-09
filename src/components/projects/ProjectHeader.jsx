@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Plus,
   FileCode,
   Edit2,
   Trash2,
@@ -69,14 +68,6 @@ export const ProjectHeader = ({
             title="Create a child sub-project"
           >
             Sub-Project
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Plus}
-            onClick={onNewTask}
-          >
-            New Task
           </Button>
           <button
             onClick={onEditProject}

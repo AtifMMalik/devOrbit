@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { sanitizeWorkspaceData, purgeExpiredDeletedTasks } from '../src/utils/storage.js';
 
 describe('Storage & Data Sanitization', () => {
-  it('preserves project author, readme, liveUrl, and githubUrl', () => {
+  it('preserves project author, liveUrl, and githubUrl', () => {
     const rawData = {
       version: '1.0.0',
       projects: [
@@ -11,7 +11,6 @@ describe('Storage & Data Sanitization', () => {
           id: 'proj_test_1',
           name: 'Awesome Project',
           author: 'Alice Developer',
-          readme: '# Architecture\n\nDetailed specifications here.',
           liveUrl: 'https://awesome.dev',
           githubUrl: 'https://github.com/alice/awesome',
         },
@@ -24,7 +23,6 @@ describe('Storage & Data Sanitization', () => {
     assert.strictEqual(sanitized.projects.length, 1);
     const p = sanitized.projects[0];
     assert.strictEqual(p.author, 'Alice Developer');
-    assert.strictEqual(p.readme, '# Architecture\n\nDetailed specifications here.');
     assert.strictEqual(p.liveUrl, 'https://awesome.dev');
     assert.strictEqual(p.githubUrl, 'https://github.com/alice/awesome');
   });

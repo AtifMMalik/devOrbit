@@ -4,56 +4,75 @@ import {
   Upload,
   Trash2,
   Database,
-  Moon,
-  Sun,
-  Laptop,
-  Check,
-  RotateCw,
+  Copy,
+  FileText,
+  HardDrive,
+  Sliders,
+  AlertTriangle,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { exportWorkspaceJSON } from '../utils/storage';
 import { Button } from '../components/common/Button';
-import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { Modal } from '../components/common/Modal';
 import { DataSyncProgressModal } from '../components/common/DataSyncProgressModal';
-import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
-  const { theme, setTheme } = useTheme();
   const { toastSuccess, toastError, toastInfo } = useToast();
-  const { isInstallable, isInstalled, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
   const fileInputRef = useRef(null);
 
-  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncMode, setSyncMode] = useState('export'); // 'export' | 'import'
   const [pendingImportData, setPendingImportData] = useState(null);
 
-  // Compute workspace counts
-  const stats = useMemo(() => {
-    const rootCount = projects.filter((p) => !p.parentId).length;
-    const subCount = projects.filter((p) => Boolean(p.parentId)).length;
-    const currentTasks = tasks.filter((t) => t.status === 'current').length;
-    const laterTasks = tasks.filter((t) => t.status === 'later').length;
-    const doneTasks = tasks.filter((t) => t.status === 'done').length;
-    const totalTodos = projects.reduce((acc, p) => acc + (p.todos?.length || 0), 0);
-    const totalTesting = projects.reduce((acc, p) => acc + (p.testing?.length || 0), 0);
+  // Recommended Settings: User preferences stored in localStorage
+  const [enableConfetti, setEnableConfetti] = useState(() => {
+    return localStorage.getItem('devorbit_confetti_pref') !== 'false';
+  });
+  const [defaultPriority, setDefaultPriority] = useState(() => {
+    return localStorage.getItem('devorbit_default_priority_pref') || 'medium';
+  });
+  const [platformFontSize, setPlatformFontSize] = useState(() => {
+    return localStorage.getItem('devorbit_platform_font_size') || '15px';
+  });
 
-    return {
-      totalProjects: projects.length,
-      rootCount,
-      subCount,
-      totalTasks: tasks.length,
-      currentTasks,
-      laterTasks,
-      doneTasks,
-      totalNotes: notes.length,
-      totalChecklists: totalTodos + totalTesting,
-      totalTodos,
-      totalTesting,
-    };
+  const handleToggleConfetti = (val) => {
+    setEnableConfetti(val);
+    localStorage.setItem('devorbit_confetti_pref', String(val));
+    toastInfo(`Task celebration confetti ${val ? 'enabled' : 'disabled'}`);
+  };
+
+  const handleChangeDefaultPriority = (val) => {
+    setDefaultPriority(val);
+    localStorage.setItem('devorbit_default_priority_pref', val);
+    toastInfo(`Default task priority set to ${val}`);
+  };
+
+  const handleChangePlatformFontSize = (val) => {
+    setPlatformFontSize(val);
+    localStorage.setItem('devorbit_platform_font_size', val);
+    document.documentElement.style.fontSize = val;
+    toastInfo(`Platform font size set to ${val}`);
+  };
+
+  // Calculate local storage size
+  const storageUsageKB = useMemo(() => {
+    try {
+      let total = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          total += (localStorage.getItem(key)?.length || 0) * 2; // UTF-16
+        }
+      }
+      return (total / 1024).toFixed(1);
+    } catch {
+      return '0';
+    }
   }, [projects, tasks, notes]);
 
   const handleStartExportJSON = () => {
@@ -117,189 +136,100 @@ export const SettingsPage = () => {
     setTimeout(() => setIsSyncModalOpen(false), 800);
   };
 
-  const handleClearWorkspace = () => {
+  const handleCopyJSONToClipboard = () => {
+    try {
+      const data = {
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        projects,
+        tasks,
+        notes,
+      };
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      toastSuccess('Full workspace JSON copied to clipboard!');
+    } catch {
+      toastError('Failed to copy to clipboard');
+    }
+  };
+
+  const handleExportMarkdownSummary = () => {
+    let md = `# devOrbit Workspace Summary\n\n*Exported on ${new Date().toLocaleString()}*\n\n`;
+    md += `## Projects (${projects.length})\n\n`;
+    projects.forEach((p) => {
+      md += `### ${p.name}\n${p.description || 'No description'}\n\n`;
+      const pTasks = tasks.filter((t) => t.projectId === p.id);
+      if (pTasks.length > 0) {
+        md += `#### Tasks (${pTasks.length})\n`;
+        pTasks.forEach((t) => {
+          md += `- [${t.status === 'done' ? 'x' : ' '}] **${t.title}** (${t.status}, priority: ${t.priority})\n`;
+        });
+        md += '\n';
+      }
+    });
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `devorbit-workspace-summary-${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toastSuccess('Markdown summary report downloaded!');
+  };
+
+  const handleConfirmResetWorkspace = () => {
+    if (deleteConfirmationText !== 'DELETE ALL') return;
     resetWorkspace();
-    toastSuccess('All workspace data cleared');
+    setIsResetModalOpen(false);
+    setDeleteConfirmationText('');
+    toastSuccess('All workspace data has been completely wiped');
   };
 
   return (
-    <div className="page-container" style={{ padding: 'var(--space-8)', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+    <div
+      className="page-container"
+      style={{
+        padding: 'var(--space-8)',
+        width: '100%',
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-6)',
+        boxSizing: 'border-box',
+      }}
+    >
       <div>
-        <h1 style={{ fontSize: 'var(--text-3xl)', margin: 0 }}>Workspace Settings</h1>
-        <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>
-          Manage your local storage data, themes, backups, and workspace preferences.
-        </p>
+        <h1 style={{ fontSize: 'var(--text-3xl)', margin: 0, fontWeight: 'var(--font-weight-bold)' }}>
+          Workspace Settings
+        </h1>
       </div>
 
-      {/* Workspace Stats Card */}
-      <div className="settings-stats-grid card" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', textAlign: 'center' }}>
-        <div>
-          <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-            {stats.totalProjects}
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
-            Projects & Sub-projects
-          </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
-            {stats.rootCount} root • {stats.subCount} sub-projects
-          </div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--status-current-text)' }}>
-            {stats.totalTasks}
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
-            Total Tasks
-          </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
-            {stats.currentTasks} current • {stats.laterTasks} later • {stats.doneTasks} done
-          </div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 'bold', color: 'var(--status-done-text)' }}>
-            {stats.totalNotes}
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: 2, fontWeight: 'var(--font-weight-medium)' }}>
-            Documentation Notes
-          </div>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2 }}>
-            {stats.totalTodos} to-dos • {stats.totalTesting} test cases
-          </div>
-        </div>
-      </div>
-
-      {/* Theme Selection */}
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <h3 style={{ fontSize: 'var(--text-base)' }}>Theme Preferences</h3>
-        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          devOrbit design system powered by CSS variables in <code>theme.css</code>.
-        </p>
-
-        <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
+      {/* Local Storage & Backup Management */}
+      <div className="card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          <h3 style={{ fontSize: 'var(--text-base)', margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Database size={18} style={{ color: 'var(--color-accent)' }} />
+            <span>Local Storage & Backup Management</span>
+          </h3>
+          <div
             style={{
-              flex: 1,
-              padding: 'var(--space-4)',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: '#0e121b',
-              border: theme === 'dark' ? '2px solid var(--color-primary)' : '1px solid var(--border-default)',
-              color: '#f1f5f9',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-2)',
-              cursor: 'pointer',
-              boxShadow: theme === 'dark' ? 'var(--shadow-glow)' : 'none',
+              gap: 6,
+              fontSize: '11px',
+              padding: '3px 8px',
+              backgroundColor: 'var(--bg-surface-active)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-secondary)',
             }}
           >
-            <Moon size={18} />
-            <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Dark Glow (Default)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            style={{
-              flex: 1,
-              padding: 'var(--space-4)',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: '#ffffff',
-              border: theme === 'light' ? '2px solid var(--color-primary)' : '1px solid var(--border-default)',
-              color: '#0f172a',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-2)',
-              cursor: 'pointer',
-              boxShadow: theme === 'light' ? 'var(--shadow-glow)' : 'none',
-            }}
-          >
-            <Sun size={18} />
-            <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>Crisp Light Mode</span>
-          </button>
+            <HardDrive size={13} style={{ color: 'var(--color-primary)' }} />
+            <span>Storage Used: <strong>{storageUsageKB} KB</strong></span>
+          </div>
         </div>
-      </div>
 
-      {/* PWA Desktop Application */}
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <h3 style={{ fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <Laptop size={18} style={{ color: 'var(--color-primary)' }} />
-          <span>Desktop Application (PWA)</span>
-        </h3>
-        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          Install devOrbit directly onto your macOS, Windows, or Linux desktop as a standalone app with offline caching, high-speed launches, and native window framing.
-        </p>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-1)' }}>
-          {isInstalled ? (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: '6px 12px',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                color: 'var(--status-done-text)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 'var(--font-weight-medium)',
-              }}
-            >
-              <Check size={14} />
-              Installed & Running in Standalone Desktop Mode
-            </div>
-          ) : (
-            <Button
-              variant="primary"
-              icon={Laptop}
-              onClick={async () => {
-                if (isInstallable) {
-                  const res = await promptInstall();
-                  if (res.outcome === 'accepted') {
-                    toastSuccess('devOrbit desktop app installed!');
-                  }
-                } else {
-                  toastSuccess('You can install devOrbit via the browser URL bar or app menu');
-                }
-              }}
-            >
-              {isInstallable ? 'Install Desktop App' : 'Download Desktop App'}
-            </Button>
-          )}
-
-          <Button
-            variant="secondary"
-            icon={RotateCw}
-            onClick={() => {
-              toastInfo('Reloading app & refreshing cache...');
-              reloadPWA();
-            }}
-          >
-            {hasUpdate ? 'Update Available — Reload' : 'Reload Application'}
-          </Button>
-
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-            Service Worker: <strong>Active & Cached</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* Data Backup & Restore */}
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <h3 style={{ fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <Database size={18} style={{ color: 'var(--color-accent)' }} />
-          <span>Local Storage & Backup Management</span>
-        </h3>
-        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          All workspace data is saved securely in your browser's LocalStorage. You can export a full JSON backup to transfer all projects, sub-projects, tasks (current, later, done), checklists (todos, testing), and notes to other devices or restore an earlier state anytime.
-        </p>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
           <Button
             variant="primary"
             icon={Download}
@@ -324,6 +254,108 @@ export const SettingsPage = () => {
               Restore from JSON Backup
             </Button>
           </label>
+
+          <Button
+            variant="secondary"
+            icon={Copy}
+            onClick={handleCopyJSONToClipboard}
+          >
+            Copy JSON to Clipboard
+          </Button>
+
+          <Button
+            variant="secondary"
+            icon={FileText}
+            onClick={handleExportMarkdownSummary}
+          >
+            Export Markdown Summary
+          </Button>
+        </div>
+      </div>
+
+      {/* Workspace Preferences & Developer Experience */}
+      <div className="card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <h3 style={{ fontSize: 'var(--text-base)', margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Sliders size={18} style={{ color: 'var(--color-primary)' }} />
+          <span>Workspace Preferences</span>
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
+          {/* Confetti Celebration */}
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                Task Completion Confetti
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                Celebrate completing tasks with particle confetti
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={enableConfetti}
+              onChange={(e) => handleToggleConfetti(e.target.checked)}
+              style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+            />
+          </div>
+
+          {/* Default Task Priority */}
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                Default Task Priority
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                Preset priority for newly drafted tasks
+              </div>
+            </div>
+            <select
+              value={defaultPriority}
+              onChange={(e) => handleChangeDefaultPriority(e.target.value)}
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-surface-active)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+
+          {/* Platform Font Size */}
+          <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                Platform Font Size
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                Scales typography, icons, and UI density across the entire devOrbit platform
+              </div>
+            </div>
+            <select
+              value={platformFontSize}
+              onChange={(e) => handleChangePlatformFontSize(e.target.value)}
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--bg-surface-active)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <option value="13.5px">Compact (13.5px)</option>
+              <option value="15px">Default (15px)</option>
+              <option value="16.5px">Comfortable (16.5px)</option>
+              <option value="18px">Large (18px)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -331,40 +363,111 @@ export const SettingsPage = () => {
       <div
         className="card"
         style={{
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
           gap: 'var(--space-4)',
           border: '1px solid var(--status-blocked-border)',
         }}
       >
-        <h3 style={{ fontSize: 'var(--text-base)', color: 'var(--status-blocked-text)' }}>
+        <h3 style={{ fontSize: 'var(--text-base)', margin: 0, color: 'var(--status-blocked-text)' }}>
           Reset Workspace Data
         </h3>
-        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0 }}>
-          Wipe all stored projects, sub-projects, tasks, checklists, and documentation notes permanently.
-        </p>
 
         <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
           <Button
             variant="danger"
             icon={Trash2}
-            onClick={() => setIsClearConfirmOpen(true)}
+            onClick={() => {
+              setDeleteConfirmationText('');
+              setIsResetModalOpen(true);
+            }}
           >
             Clear All Data
           </Button>
         </div>
       </div>
 
-      {/* Confirmation Dialogs */}
-      <ConfirmDialog
-        isOpen={isClearConfirmOpen}
-        onClose={() => setIsClearConfirmOpen(false)}
-        onConfirm={handleClearWorkspace}
-        title="Clear All Workspace Data"
-        message="This will wipe all projects, sub-projects, tasks, and notes permanently. Are you sure?"
-        confirmText="Wipe Everything"
-        confirmVariant="danger"
-      />
+      {/* Reset Workspace Confirmation Modal with exact DELETE ALL confirmation */}
+      <Modal
+        isOpen={isResetModalOpen}
+        onClose={() => {
+          setIsResetModalOpen(false);
+          setDeleteConfirmationText('');
+        }}
+        title="Confirm Workspace Reset"
+        maxWidth="480px"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+            <div
+              style={{
+                padding: 'var(--space-2)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'rgba(244, 63, 94, 0.12)',
+                color: '#f43f5e',
+                border: '1px solid rgba(244, 63, 94, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <p style={{ margin: 0, color: 'var(--text-primary)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-semibold)' }}>
+                This action is irreversible!
+              </p>
+              <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1.5 }}>
+                All projects, sub-projects, tasks, checklists, and notes in your browser storage will be permanently wiped.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' }}>
+            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--font-weight-medium)', color: 'var(--text-primary)' }}>
+              Type <strong>DELETE ALL</strong> to confirm:
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder="DELETE ALL"
+              autoFocus
+              style={{
+                padding: '8px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-default)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'bold',
+                letterSpacing: '0.05em',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsResetModalOpen(false);
+                setDeleteConfirmationText('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deleteConfirmationText !== 'DELETE ALL'}
+              onClick={handleConfirmResetWorkspace}
+            >
+              Wipe Everything
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Data Sync Animated Loading Modal */}
       <DataSyncProgressModal

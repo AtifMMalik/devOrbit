@@ -9,7 +9,6 @@ import {
   Trash2,
   CheckCircle2,
   ExternalLink,
-  Sparkles,
   Calendar,
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
@@ -25,36 +24,6 @@ const STATUS_CONFIG = {
   ready: { label: 'Ready to Build', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.12)' },
   converted: { label: 'Converted to Project', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
 };
-
-const SAMPLE_IDEAS = [
-  {
-    title: 'Cloudflare Edge Analytics Proxy',
-    description: 'A lightning-fast caching and analytics gateway deployed on Cloudflare Workers to inspect latency, cache hits, and GraphQL payload sizes in real-time.',
-    tags: ['cloudflare', 'workers', 'analytics', 'edge'],
-    priority: 'high',
-    status: 'ready',
-    color: '#f97316',
-    targetFeatures: [
-      'Edge streaming reverse-proxy with sub-5ms overhead',
-      'Payload size and roundtrip latency metric collection',
-      'Configurable cache rules based on response headers',
-      'Web-based dashboard with real-time SSE chart streams',
-    ],
-  },
-  {
-    title: 'Distributed Log Observer CLI',
-    description: 'A native terminal tool for tailing, filtering, and cross-correlating structured JSON logs from Kubernetes pods and Docker containers simultaneously.',
-    tags: ['golang', 'cli', 'kubernetes', 'logging'],
-    priority: 'medium',
-    status: 'exploring',
-    color: '#06b6d4',
-    targetFeatures: [
-      'Interactive TUI with fuzzy log filtering and regex highlight',
-      'Automatic stack trace demangling and JSON syntax parsing',
-      'Multi-pod tailing with synchronized timestamps',
-    ],
-  },
-];
 
 export const ProjectIdeasPage = () => {
   const navigate = useNavigate();
@@ -87,11 +56,6 @@ export const ProjectIdeasPage = () => {
       setActiveProjectId(newProject.id);
       navigate(`/project/${newProject.id}/tasks`);
     }
-  };
-
-  const handleLoadSampleIdeas = () => {
-    SAMPLE_IDEAS.forEach((sample) => createIdea(sample));
-    toastSuccess('Loaded 2 example project ideas!');
   };
 
   // Filtered Ideas
@@ -178,24 +142,10 @@ export const ProjectIdeasPage = () => {
                 {ideas?.length || 0}
               </span>
             </h1>
-            <p
-              style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--text-muted)',
-                margin: '4px 0 0 0',
-              }}
-            >
-              Brainstorm, incubate, and scope out future projects. Turn any idea into an active devOrbit project with one click.
-            </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          {(!ideas || ideas.length === 0) && (
-            <Button variant="secondary" size="sm" icon={Sparkles} onClick={handleLoadSampleIdeas}>
-              Load Examples
-            </Button>
-          )}
           <Button variant="primary" icon={Plus} onClick={() => navigate('/ideas/new')}>
             New Project Idea
           </Button>
@@ -314,25 +264,20 @@ export const ProjectIdeasPage = () => {
           <h3 style={{ margin: '0 0 var(--space-1) 0', fontSize: 'var(--text-lg)', color: 'var(--text-primary)' }}>
             {ideas?.length === 0 ? 'No project ideas yet' : 'No matching ideas found'}
           </h3>
-          <p
-            style={{
-              fontSize: 'var(--text-xs)',
-              color: 'var(--text-muted)',
-              maxWidth: '460px',
-              margin: '0 auto var(--space-5) auto',
-              lineHeight: 1.5,
-            }}
-          >
-            {ideas?.length === 0
-              ? 'Capture your next big innovation, architecture concept, or developer tool idea. Incubate it here and convert it to a full devOrbit project when you are ready to build.'
-              : 'Try clearing your search query or adjusting the status and priority filters.'}
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            {ideas?.length === 0 && (
-              <Button variant="secondary" icon={Sparkles} onClick={handleLoadSampleIdeas}>
-                Load Examples
-              </Button>
-            )}
+          {ideas?.length > 0 && (
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-muted)',
+                maxWidth: '460px',
+                margin: '0 auto var(--space-5) auto',
+                lineHeight: 1.5,
+              }}
+            >
+              Try clearing your search query or adjusting the status and priority filters.
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: ideas?.length === 0 ? 'var(--space-3)' : 0 }}>
             <Button variant="primary" icon={Plus} onClick={() => navigate('/ideas/new')}>
               Create Project Idea
             </Button>

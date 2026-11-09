@@ -240,10 +240,17 @@ export const Sidebar = ({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
           <button
             type="button"
-            onClick={onOpenRecycleBin}
-            className="btn-icon"
-            style={{ width: 32, height: 32, position: 'relative' }}
-            title="Recycle Bin (30-day task and project recovery)"
+            onClick={() => navigate('/recycle-bin')}
+            className={`btn-icon ${location.pathname === '/recycle-bin' ? 'active' : ''}`}
+            style={{
+              width: 32,
+              height: 32,
+              position: 'relative',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: location.pathname === '/recycle-bin' ? 'var(--bg-surface-active)' : 'transparent',
+              color: location.pathname === '/recycle-bin' ? 'var(--color-primary)' : 'var(--text-secondary)',
+            }}
+            title="Recycle Bin"
           >
             <Trash2 size={15} />
             {((deletedTasks?.length || 0) + (deletedProjects?.length || 0)) > 0 && (
@@ -507,28 +514,22 @@ export const Sidebar = ({
             gap: 2,
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              if (onOpenRecycleBin) onOpenRecycleBin();
-              if (isMobile) onToggleCollapse(true);
-            }}
-            style={{
+          <NavLink
+            to="/recycle-bin"
+            onClick={() => isMobile && onToggleCollapse(true)}
+            style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '6px 8px',
               borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-secondary)',
-              backgroundColor: 'transparent',
+              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
               fontSize: 'var(--text-xs)',
-              cursor: 'pointer',
-              border: 'none',
-              width: '100%',
-              textAlign: 'left',
+              textDecoration: 'none',
               transition: 'background-color var(--transition-fast)',
-            }}
-            title="Recycle Bin (30-day task and project recovery)"
+            })}
+            title="Recycle Bin"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Trash2 size={15} />
@@ -548,7 +549,7 @@ export const Sidebar = ({
                 {(deletedTasks?.length || 0) + (deletedProjects?.length || 0)}
               </span>
             )}
-          </button>
+          </NavLink>
 
           <NavLink
             to="/settings"

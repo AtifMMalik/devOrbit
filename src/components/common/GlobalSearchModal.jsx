@@ -68,7 +68,6 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
           p.name.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q) ||
           p.author?.toLowerCase().includes(q) ||
-          p.readme?.toLowerCase().includes(q) ||
           (p.tags && p.tags.some((t) => t.toLowerCase().includes(q)))
       )
       .slice(0, 5)
