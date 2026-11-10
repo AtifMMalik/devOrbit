@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Folder } from 'lucide-react';
 import { getProjectInitials } from '../../utils/imageUtils';
 
 const SIZE_MAP = {

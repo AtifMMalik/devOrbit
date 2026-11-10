@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import {
   checkDomainAvailability,
   generateAIDomainSuggestions,
-  POPULAR_TLDS,
 } from '../src/extensions/domain-research/domainService.js';
 import {
   saveSketchIllustration,

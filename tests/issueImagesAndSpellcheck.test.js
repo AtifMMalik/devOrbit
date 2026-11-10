@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { analyzeTextSpelling, addToUserDictionary, ignoreWordForSession } from '../src/utils/spellChecker.js';
+import { analyzeTextSpelling, ignoreWordForSession } from '../src/utils/spellChecker.js';
 import { parseMarkdownToBlocks, serializeBlocks, isImageUrl, extractImageNameFromUrl } from '../src/utils/imageUtils.js';
 
 describe('Spell Checker Engine & Word-Style Inline Detection', () => {
