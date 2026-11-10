@@ -24,8 +24,8 @@ import { formatTasksToMarkdown, formatTasksToJson } from '../../utils/issueExpor
 
 const TOP_COLUMNS = [
   { key: 'hotfix', title: 'Hot Fix' },
-  { key: 'current', title: 'Current' },
-  { key: 'later', title: 'Later' },
+  { key: 'current', title: 'Ongoing tasks' },
+  { key: 'later', title: 'Queued tasks' },
 ];
 
 export const TaskKanbanBoard = ({
@@ -460,7 +460,7 @@ export const TaskKanbanBoard = ({
         </div>
       )}
 
-      {/* Top Row: Current & Later Columns (Taking full horizontal space) */}
+      {/* Top Row: Ongoing tasks & Queued tasks Columns (Taking full horizontal space) */}
       <div
         className="task-kanban-board-container"
         style={{

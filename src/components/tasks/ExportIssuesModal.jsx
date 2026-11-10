@@ -281,10 +281,10 @@ export const ExportIssuesModal = ({
               onChange={(e) => setSelectedList(e.target.value)}
               style={{ fontSize: 'var(--text-xs)', padding: '4px 8px' }}
             >
-              <option value="all">All Lists (Hotfix, Current, Later, Done)</option>
+              <option value="all">All Lists (Hotfix, Ongoing, Queued, Done)</option>
               <option value="hotfix">Hot Fix List Only</option>
-              <option value="current">Current List Only</option>
-              <option value="later">Later List Only</option>
+              <option value="current">Ongoing tasks List Only</option>
+              <option value="later">Queued tasks List Only</option>
               <option value="done">Done / Completed Only</option>
             </select>
           </div>

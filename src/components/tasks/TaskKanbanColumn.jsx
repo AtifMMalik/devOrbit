@@ -165,7 +165,7 @@ export const TaskKanbanColumn = ({
           gap: 'var(--space-2)',
           overflowY: 'auto',
           flex: 1,
-          paddingRight: '2px',
+          padding: '2px',
         }}
       >
         {tasks.map((task) => (

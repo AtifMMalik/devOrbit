@@ -6,8 +6,8 @@ export const StatusBadge = ({ status }) => {
   
   const statusConfig = {
     hotfix: { label: 'Hot Fix', color: 'var(--status-hotfix-solid)', className: 'badge-status-hotfix' },
-    current: { label: 'Current', color: 'var(--status-current-solid)', className: 'badge-status-current' },
-    later: { label: 'Later', color: 'var(--status-later-solid)', className: 'badge-status-later' },
+    current: { label: 'Ongoing tasks', color: 'var(--status-current-solid)', className: 'badge-status-current' },
+    later: { label: 'Queued tasks', color: 'var(--status-later-solid)', className: 'badge-status-later' },
     done: { label: 'Done', color: 'var(--status-done-solid)', className: 'badge-status-done' },
   };
 

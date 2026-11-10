@@ -106,41 +106,60 @@ export const CreateTaskPage = () => {
   const descImageInputRef = useRef(null);
 
   // Baseline task values for dirty checking (Requirement 1)
-  const initialTaskValuesRef = useRef(null);
+  const initialTaskValuesRef = useRef(
+    existingTask
+      ? {
+          projectId: defaultProjectId,
+          title: existingTask.title || '',
+          description: existingTask.description || '',
+          taskPrompt: existingTask.taskPrompt || '',
+          status: initialStatus,
+          priority: existingTask.priority || (initialIsHotfix ? 'urgent' : 'medium'),
+          deadline: existingTask.deadline || existingTask.dueDate || '',
+          completionNote: existingTask.completionNote || '',
+          isHotfix: initialIsHotfix,
+          tags: existingTask.tags || (initialIsHotfix ? ['hotfix', 'bug'] : ['feature']),
+          subtasks: existingTask.subtasks || [],
+        }
+      : null
+  );
+
+  const lastLoadedTaskIdRef = useRef(existingTask?.id || null);
 
   // In-page search navigation state
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
 
-  // Load existing task when editing
+  // Load existing task when editing or when route task changes
   useEffect(() => {
     if (existingTask) {
-      const pId = existingTask.projectId || defaultProjectId;
-      const tTitle = existingTask.title || '';
-      const tDesc = existingTask.description || '';
-      const tPrompt = existingTask.taskPrompt || '';
-      const tStatus = existingTask.status || 'current';
-      const tPriority = existingTask.priority || 'medium';
-      const tDeadline = existingTask.deadline || existingTask.dueDate || '';
-      const tNote = existingTask.completionNote || '';
-      const tHotfix = Boolean(existingTask.isHotfix || (existingTask.tags && existingTask.tags.includes('hotfix')));
-      const tTags = existingTask.tags || [];
-      const tSubtasks = existingTask.subtasks || [];
+      if (lastLoadedTaskIdRef.current !== existingTask.id) {
+        lastLoadedTaskIdRef.current = existingTask.id;
+        const pId = existingTask.projectId || defaultProjectId;
+        const tTitle = existingTask.title || '';
+        const tDesc = existingTask.description || '';
+        const tPrompt = existingTask.taskPrompt || '';
+        const tStatus = existingTask.status || 'current';
+        const tPriority = existingTask.priority || 'medium';
+        const tDeadline = existingTask.deadline || existingTask.dueDate || '';
+        const tNote = existingTask.completionNote || '';
+        const tHotfix = Boolean(existingTask.isHotfix || (existingTask.tags && existingTask.tags.includes('hotfix')));
+        const tTags = existingTask.tags || [];
+        const tSubtasks = existingTask.subtasks || [];
 
-      setProjectId(pId);
-      setTitle(tTitle);
-      setDescription(tDesc);
-      setSketchUrl(existingTask.sketch || '');
-      setTaskPrompt(tPrompt);
-      setStatus(tStatus);
-      setPriority(tPriority);
-      setDeadline(tDeadline);
-      setCompletionNote(tNote);
-      setIsHotfix(tHotfix);
-      setTags(tTags);
-      setSubtasks(tSubtasks);
+        setProjectId(pId);
+        setTitle(tTitle);
+        setDescription(tDesc);
+        setSketchUrl(existingTask.sketch || '');
+        setTaskPrompt(tPrompt);
+        setStatus(tStatus);
+        setPriority(tPriority);
+        setDeadline(tDeadline);
+        setCompletionNote(tNote);
+        setIsHotfix(tHotfix);
+        setTags(tTags);
+        setSubtasks(tSubtasks);
 
-      if (!initialTaskValuesRef.current) {
         initialTaskValuesRef.current = {
           projectId: pId,
           title: tTitle,
@@ -1095,8 +1114,8 @@ export const CreateTaskPage = () => {
                 Status
               </label>
               <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="current">Current</option>
-                <option value="later">Later</option>
+                <option value="current">Ongoing tasks</option>
+                <option value="later">Queued tasks</option>
                 <option value="done">Done (Completed)</option>
                 <option value="hotfix">Hot Fix</option>
               </select>

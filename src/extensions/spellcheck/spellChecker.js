@@ -206,39 +206,50 @@ export const ignoreWordForSession = (word) => {
 
 /**
  * Computes Levenshtein edit distance between two strings.
+ * Optimized with two rows to avoid O(N*M) array allocations.
  * @param {string} a
  * @param {string} b
  * @returns {number}
  */
 export const getEditDistance = (a, b) => {
   if (a === b) return 0;
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
+  const aLen = a.length;
+  const bLen = b.length;
+  if (aLen === 0) return bLen;
+  if (bLen === 0) return aLen;
 
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
+  let prev = new Array(aLen + 1);
+  let curr = new Array(aLen + 1);
+
+  for (let j = 0; j <= aLen; j++) {
+    prev[j] = j;
   }
 
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
+  for (let i = 1; i <= bLen; i++) {
+    curr[0] = i;
+    const bChar = b.charCodeAt(i - 1);
+    for (let j = 1; j <= aLen; j++) {
+      if (bChar === a.charCodeAt(j - 1)) {
+        curr[j] = prev[j - 1];
       } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+        curr[j] = Math.min(
+          prev[j - 1] + 1, // substitution
+          curr[j - 1] + 1, // insertion
+          prev[j] + 1      // deletion
         );
       }
     }
+    const temp = prev;
+    prev = curr;
+    curr = temp;
   }
 
-  return matrix[b.length][a.length];
+  return prev[aLen];
 };
+
+// In-memory LRU cache for spelling suggestions to ensure instant UI responsiveness
+const suggestionsCache = new Map();
+const MAX_SUGGESTION_CACHE = 500;
 
 /**
  * Get top spelling suggestions for a misspelled word.
@@ -250,29 +261,43 @@ export const getSpellingSuggestions = (word, maxSuggestions = 3) => {
   const norm = word.toLowerCase().trim();
   if (norm.length < 2) return [];
 
+  const isCapitalized = word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase();
+  const cacheKey = `${norm}:${maxSuggestions}`;
+
+  if (suggestionsCache.has(cacheKey)) {
+    const cached = suggestionsCache.get(cacheKey);
+    return isCapitalized
+      ? cached.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      : cached;
+  }
+
   ensureDictionary();
   const userDict = getUserDictionary();
 
-  // Search length-bounded candidates (length - 1, length, length + 1)
-  const candidates = [];
-  for (let l = norm.length - 1; l <= norm.length + 1; l++) {
-    if (wordsByLength[l]) candidates.push(...wordsByLength[l]);
-  }
-  for (const w of userDict) {
-    if (Math.abs(w.length - norm.length) <= 1) candidates.push(w);
-  }
-
   const matches = [];
 
-  for (const candidate of candidates) {
-    // Only check candidate if length diff <= 1
-    if (Math.abs(candidate.length - norm.length) > 1) continue;
-
+  const checkCandidate = (candidate) => {
+    if (Math.abs(candidate.length - norm.length) > 1) return;
     const dist = getEditDistance(norm, candidate);
     if (dist <= 2) {
       const isCommon = COMMON_VOCABULARY.has(candidate);
       const firstSame = candidate[0] === norm[0];
       matches.push({ word: candidate, dist, isCommon, firstSame });
+    }
+  };
+
+  // 1. Search user custom dictionary
+  for (const w of userDict) {
+    checkCandidate(w);
+  }
+
+  // 2. Search length-bounded buckets without allocating large arrays
+  for (let l = norm.length - 1; l <= norm.length + 1; l++) {
+    const bucket = wordsByLength ? wordsByLength[l] : null;
+    if (bucket) {
+      for (let i = 0; i < bucket.length; i++) {
+        checkCandidate(bucket[i]);
+      }
     }
   }
 
@@ -288,15 +313,17 @@ export const getSpellingSuggestions = (word, maxSuggestions = 3) => {
     return a.word.length - b.word.length;
   });
 
-  // Preserve initial capitalization if user capitalized word
-  const isCapitalized = word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase();
+  const rawResults = matches.slice(0, maxSuggestions).map((m) => m.word);
 
-  return matches.slice(0, maxSuggestions).map((m) => {
-    if (isCapitalized) {
-      return m.word.charAt(0).toUpperCase() + m.word.slice(1);
-    }
-    return m.word;
-  });
+  if (suggestionsCache.size >= MAX_SUGGESTION_CACHE) {
+    const firstKey = suggestionsCache.keys().next().value;
+    suggestionsCache.delete(firstKey);
+  }
+  suggestionsCache.set(cacheKey, rawResults);
+
+  return isCapitalized
+    ? rawResults.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    : rawResults;
 };
 
 /**
@@ -309,6 +336,9 @@ export const getSpellingSuggestions = (word, maxSuggestions = 3) => {
 export const isWordValid = (word, fullText = '', start = 0) => {
   if (!word) return true;
 
+  // Words longer than 30 chars are typically hashes, tokens, or long URLs
+  if (word.length > 30) return true;
+
   // Preceding number check: units attached to numbers like 1.2s, 100ms, 500kb, 10px, 4rem
   if (start > 0 && fullText) {
     const prevChar = fullText[start - 1];
@@ -320,6 +350,14 @@ export const isWordValid = (word, fullText = '', start = 0) => {
     }
   }
 
+  // Base64 data URLs or blobs: ignore words within data URLs
+  if (start > 0 && fullText) {
+    const precedingSlice = fullText.slice(Math.max(0, start - 30), start);
+    if (precedingSlice.includes('base64,') || precedingSlice.includes('data:image/')) {
+      return true;
+    }
+  }
+
   // Single characters: 'a' and 'i' are valid English words
   if (word.length === 1) {
     const l = word.toLowerCase();
@@ -328,6 +366,11 @@ export const isWordValid = (word, fullText = '', start = 0) => {
 
   // Acronyms check: all-caps words of length 2-6 (e.g. LCP, API, SEO, PR, CI, CD, SQL, UUID, UI, UX)
   if (/^[A-Z0-9]+$/.test(word) && word.length <= 6) {
+    return true;
+  }
+
+  // CamelCase or PascalCase code identifiers (e.g. retryCount, handleDoubleClick, onSelectToggle)
+  if (/[a-z][A-Z]/.test(word)) {
     return true;
   }
 
@@ -376,6 +419,8 @@ export const isWordValid = (word, fullText = '', start = 0) => {
 
 /**
  * Analyzes a full text string and returns all misspelled words with character ranges and suggestions.
+ * Suggestions are evaluated lazily on demand when requested to keep initial rendering sub-millisecond
+ * even on very large task content.
  * @param {string} text
  * @returns {Array<{ word: string, start: number, end: number, suggestions: string[] }>}
  */
@@ -393,13 +438,23 @@ export const analyzeTextSpelling = (text) => {
     const end = start + word.length;
 
     if (!isWordValid(word, text, start)) {
-      const suggestions = getSpellingSuggestions(word);
-      results.push({
+      let cachedSuggestions = null;
+      const errObj = {
         word,
         start,
         end,
-        suggestions,
+      };
+      Object.defineProperty(errObj, 'suggestions', {
+        get() {
+          if (!cachedSuggestions) {
+            cachedSuggestions = getSpellingSuggestions(word);
+          }
+          return cachedSuggestions;
+        },
+        enumerable: true,
+        configurable: true,
       });
+      results.push(errObj);
     }
   }
 

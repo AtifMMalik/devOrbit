@@ -271,7 +271,7 @@ export const TaskCard = ({
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', zIndex: isSelected ? 2 : 1 }}>
       {/* Top drop line indicator */}
       {dropIndicator === 'before' && (
         <div
@@ -311,11 +311,13 @@ export const TaskCard = ({
           borderRadius: 'var(--radius-sm)',
           border: isCut
             ? '1.5px dashed var(--color-primary)'
-            : isSelected
-            ? '2px solid var(--color-primary)'
             : isHotfix
             ? '1px solid rgba(244, 63, 94, 0.45)'
+            : isSelected
+            ? '1px solid var(--color-primary)'
             : '1px solid var(--border-default)',
+          outline: isSelected ? '2px solid var(--color-primary)' : 'none',
+          outlineOffset: isSelected ? '-1px' : '0px',
           boxShadow: isSelected
             ? '0 0 10px rgba(0, 132, 255, 0.25)'
             : isHotfix
@@ -324,7 +326,7 @@ export const TaskCard = ({
           opacity: isDragging ? 0.35 : isCut ? 0.55 : 1,
           cursor: 'grab',
           userSelect: 'none',
-          transition: 'border-color var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast)',
+          transition: 'border-color var(--transition-fast), outline var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast)',
         }}
       >
         <summary style={{ outline: 'none' }}>

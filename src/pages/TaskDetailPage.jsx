@@ -694,8 +694,8 @@ export const TaskDetailPage = () => {
                 }}
               >
                 <option value="hotfix">Hot Fix</option>
-                <option value="current">Current</option>
-                <option value="later">Later</option>
+                <option value="current">Ongoing tasks</option>
+                <option value="later">Queued tasks</option>
                 <option value="done">Done</option>
               </select>
             </div>
