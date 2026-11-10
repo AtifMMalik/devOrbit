@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Hue & View Theme: Emerald Forest
+   File: components.css
+   Description: Ready-to-use reusable UI component classes for React and HTML
+   ========================================================================== */
+
+/* Button Variants */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font_family);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--border_radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition_fast);
+}
+
+.btn-primary {
+  background-color: var(--button_default);
+  color: var(--text_light);
+}
+.btn-primary:hover {
+  background-color: var(--button_hover);
+}
+.btn-primary:active {
+  background-color: var(--button_active);
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--text_light);
+}
+.btn-secondary:hover {
+  filter: brightness(0.92);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+}
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: var(--text_light);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text_c);
+}
+.btn-ghost:hover {
+  background-color: var(--surface_muted);
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+.btn-accent:hover {
+  filter: brightness(0.9);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.btn-lg {
+  padding: 14px 26px;
+  font-size: 1.1rem;
+}
+
+/* Cards & Containers */
+.card {
+  background-color: var(--surface_c);
+  border: 1px solid var(--border_c);
+  border-radius: var(--border_radius_lg);
+  padding: 24px;
+  box-shadow: var(--shadow_sm);
+  transition: box-shadow var(--transition_normal), transform var(--transition_fast);
+}
+
+.card:hover {
+  box-shadow: var(--shadow_md);
+}
+
+.card-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border_c);
+}
+
+.card-footer {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border_c);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Badges & Chips */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--border_radius_full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.badge-primary {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: var(--primary);
+}
+
+.badge-accent {
+  background-color: rgba(244, 63, 94, 0.12);
+  color: var(--accent);
+}
+
+.badge-neutral {
+  background-color: var(--surface_muted);
+  color: var(--text_c);
+  border: 1px solid var(--border_c);
+}
+
+/* Form Controls */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text_c);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--border_radius_sm);
+  border: 1px solid var(--border_c);
+  background-color: var(--input_bg, var(--surface_c));
+  color: var(--text_c);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transition_fast), box-shadow var(--transition_fast);
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Alerts */
+.alert {
+  padding: 14px 18px;
+  border-radius: var(--border_radius);
+  border-left: 4px solid var(--primary);
+  background-color: var(--surface_muted);
+  color: var(--text_c);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-accent {
+  border-left-color: var(--accent);
+}

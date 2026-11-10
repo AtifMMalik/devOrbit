@@ -1,23 +1,21 @@
 import React, { useState, useRef } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Settings,
   Plus,
-  PanelLeftClose,
-  PanelLeftOpen,
-  TrendingUp,
-  Trash2,
-  Lightbulb,
+  Blocks,
 } from 'lucide-react';
 import { ProjectTree } from './ProjectTree';
 import { ProjectAvatar } from '../common/ProjectAvatar';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useExtensions } from '../../extensions/ExtensionContext';
+import { PomodoroWidget } from '../../extensions/pomodoro/PomodoroWidget';
 import { DevOrbitLogo } from '../common/DevOrbitLogo';
+import { ExtensionsSidebarPanel } from './ExtensionsSidebarPanel';
 
 export const Sidebar = ({
   width = 260,
   collapsed = false,
+  activePanel = 'projects',
   onResize,
   onToggleCollapse,
   onAddProject,
@@ -27,6 +25,7 @@ export const Sidebar = ({
   isMobile = false,
 }) => {
   const { projects, activeProjectId, setActiveProjectId, deletedTasks, deletedProjects } = useWorkspace();
+  const { isExtensionActive } = useExtensions();
   const navigate = useNavigate();
   const location = useLocation();
   const isResizingRef = useRef(false);
@@ -65,227 +64,9 @@ export const Sidebar = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // When collapsed on desktop, render a thin 56px sidebar including logo, toggle button, and project icons
+  // When collapsed on desktop, the thin ActivityBar remains visible and this secondary sidebar hides
   if (collapsed && !isMobile) {
-    return (
-      <aside
-        style={{
-          width: '56px',
-          height: '100vh',
-          backgroundColor: 'var(--bg-sidebar)',
-          borderRight: '1px solid var(--border-default)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          zIndex: 'var(--z-sticky)',
-          flexShrink: 0,
-          padding: 'var(--space-2) 0',
-          gap: 'var(--space-2)',
-        }}
-      >
-        {/* DevOrbit Logo */}
-        <div
-          onClick={() => {
-            setActiveProjectId(null);
-            navigate('/');
-          }}
-          style={{
-            cursor: 'pointer',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          title="devOrbit Home"
-        >
-          <DevOrbitLogo variant="icon" height={24} />
-        </div>
-
-        {/* Toggle button below devorbit icon */}
-        <button
-          type="button"
-          onClick={() => onToggleCollapse(false)}
-          className="btn-icon"
-          style={{ width: 30, height: 30 }}
-          title="Expand Sidebar (⌘T / ⌥T / [)"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
-
-        <div style={{ width: '32px', height: '1px', backgroundColor: 'var(--border-default)', margin: '2px 0' }} />
-
-        {/* Project Overview & Work Analysis Navigation Icons */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '100%' }}>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveProjectId(null);
-              navigate('/');
-            }}
-            className={`btn-icon ${location.pathname === '/' && !activeProjectId ? 'active' : ''}`}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: location.pathname === '/' && !activeProjectId ? 'var(--bg-surface-active)' : 'transparent',
-              color: location.pathname === '/' && !activeProjectId ? 'var(--color-primary)' : 'var(--text-secondary)',
-            }}
-            title="Projects Overview"
-          >
-            <LayoutDashboard size={15} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveProjectId(null);
-              navigate('/analytics');
-            }}
-            className={`btn-icon ${location.pathname === '/analytics' ? 'active' : ''}`}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: location.pathname === '/analytics' ? 'var(--bg-surface-active)' : 'transparent',
-              color: location.pathname === '/analytics' ? 'var(--color-primary)' : 'var(--text-secondary)',
-            }}
-            title="Work Analytics & Velocity"
-          >
-            <TrendingUp size={15} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveProjectId(null);
-              navigate('/ideas');
-            }}
-            className={`btn-icon ${location.pathname === '/ideas' ? 'active' : ''}`}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: location.pathname === '/ideas' ? 'var(--bg-surface-active)' : 'transparent',
-              color: location.pathname === '/ideas' ? '#f59e0b' : 'var(--text-secondary)',
-            }}
-            title="Project Ideas Lab"
-          >
-            <Lightbulb size={15} />
-          </button>
-        </div>
-
-        <div style={{ width: '32px', height: '1px', backgroundColor: 'var(--border-default)', margin: '2px 0' }} />
-
-        {/* Projects' icons vertical scroll area */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            width: '100%',
-            padding: '4px 0',
-          }}
-        >
-          {projects.map((proj) => {
-            const isActive = activeProjectId === proj.id;
-            return (
-              <button
-                key={proj.id}
-                type="button"
-                onClick={() => {
-                  setActiveProjectId(proj.id);
-                  navigate(`/project/${proj.id}/tasks`);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '2px',
-                  borderRadius: 'var(--radius-sm)',
-                  boxShadow: isActive ? '0 0 0 2px var(--color-primary)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'transform var(--transition-fast)',
-                }}
-                title={`${proj.name} (Click to open)`}
-              >
-                <ProjectAvatar project={proj} size={28} />
-              </button>
-            );
-          })}
-
-          {/* Quick Add Project */}
-          <button
-            type="button"
-            onClick={onAddProject}
-            className="btn-icon"
-            style={{ width: 28, height: 28, border: '1px dashed var(--border-default)', borderRadius: 'var(--radius-sm)', marginTop: 2 }}
-            title="Create New Project (⌘⇧N / ⌥⇧N)"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-
-        <div style={{ width: '32px', height: '1px', backgroundColor: 'var(--border-default)', margin: '2px 0' }} />
-
-        {/* Bottom icon actions: Recycle Bin & Settings */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%' }}>
-          <button
-            type="button"
-            onClick={() => navigate('/recycle-bin')}
-            className={`btn-icon ${location.pathname === '/recycle-bin' ? 'active' : ''}`}
-            style={{
-              width: 32,
-              height: 32,
-              position: 'relative',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: location.pathname === '/recycle-bin' ? 'var(--bg-surface-active)' : 'transparent',
-              color: location.pathname === '/recycle-bin' ? 'var(--color-primary)' : 'var(--text-secondary)',
-            }}
-            title="Recycle Bin"
-          >
-            <Trash2 size={15} />
-            {((deletedTasks?.length || 0) + (deletedProjects?.length || 0)) > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: 3,
-                  right: 3,
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  backgroundColor: '#f43f5e',
-                }}
-              />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className={`btn-icon ${location.pathname === '/settings' ? 'active' : ''}`}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: location.pathname === '/settings' ? 'var(--bg-surface-active)' : 'transparent',
-              color: location.pathname === '/settings' ? 'var(--color-primary)' : 'var(--text-secondary)',
-            }}
-            title="Settings & Backup"
-          >
-            <Settings size={15} />
-          </button>
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   return (
@@ -324,16 +105,14 @@ export const Sidebar = ({
           boxShadow: isMobile && !collapsed ? '0 10px 30px rgba(0,0,0,0.5)' : 'none',
         }}
       >
-        {/* Brand Header with Close button */}
+        {/* Brand Header - Always shows DevOrbitLogo */}
         <div
           style={{
             height: 'var(--header-height)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             padding: '0 var(--space-3)',
             borderBottom: '1px solid var(--border-default)',
-            gap: 'var(--space-2)',
             flexShrink: 0,
           }}
         >
@@ -353,224 +132,79 @@ export const Sidebar = ({
           >
             <DevOrbitLogo variant="horizontal" height={26} />
           </div>
-
-          {/* Close Sidebar button */}
-          <button
-            onClick={() => onToggleCollapse(true)}
-            className="btn-icon"
-            style={{ width: 26, height: 26 }}
-            title="Collapse Sidebar"
-          >
-            <PanelLeftClose size={15} />
-          </button>
         </div>
 
-        {/* Main Navigation Scroll Area */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: 'var(--space-3) var(--space-2)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-4)',
-          }}
-        >
-          {/* Top Navigation Links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <NavLink
-              to="/"
-              onClick={() => {
-                setActiveProjectId(null);
-                if (isMobile) onToggleCollapse(true);
-              }}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-sm)',
-                color: isActive && !activeProjectId ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: isActive && !activeProjectId ? 'var(--bg-surface-active)' : 'transparent',
-                fontWeight: isActive && !activeProjectId ? 'var(--font-weight-medium)' : 'normal',
-                fontSize: 'var(--text-xs)',
-                textDecoration: 'none',
-                transition: 'background-color var(--transition-fast)',
-              })}
-              title="Projects Overview"
-            >
-              <LayoutDashboard size={15} />
-              <span>Projects Overview</span>
-            </NavLink>
-
-            <NavLink
-              to="/analytics"
-              onClick={() => {
-                setActiveProjectId(null);
-                if (isMobile) onToggleCollapse(true);
-              }}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-sm)',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                fontSize: 'var(--text-xs)',
-                textDecoration: 'none',
-                transition: 'background-color var(--transition-fast)',
-              })}
-              title="Engineering Analytics & Velocity"
-            >
-              <TrendingUp size={15} />
-              <span>Work Analytics</span>
-            </NavLink>
-
-            <NavLink
-              to="/ideas"
-              onClick={() => {
-                setActiveProjectId(null);
-                if (isMobile) onToggleCollapse(true);
-              }}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-sm)',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-                fontWeight: isActive ? 'var(--font-weight-medium)' : 'normal',
-                fontSize: 'var(--text-xs)',
-                textDecoration: 'none',
-                transition: 'background-color var(--transition-fast)',
-              })}
-              title="Project Ideas Lab & Incubation"
-            >
-              <Lightbulb size={15} style={{ color: '#f59e0b' }} />
-              <span>Project Ideas</span>
-            </NavLink>
-          </div>
-
-          {/* Project Tree Section */}
-          <div>
+        {activePanel === 'extensions' ? (
+          <ExtensionsSidebarPanel />
+        ) : (
+          <>
+            {/* Main Navigation Scroll Area */}
             <div
               style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: 'var(--space-3) var(--space-2)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 'var(--space-1)',
-                paddingLeft: 'var(--space-2)',
-                paddingRight: 'var(--space-1)',
+                flexDirection: 'column',
+                gap: 'var(--space-4)',
               }}
             >
-              <span
-                style={{
-                  fontSize: 'var(--text-2xs)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Projects
-              </span>
-              <button
-                onClick={() => {
-                  onAddProject();
-                  if (isMobile) onToggleCollapse(true);
-                }}
-                className="btn-icon"
-                style={{ width: 18, height: 18 }}
-                title="Create new project"
-              >
-                <Plus size={12} />
-              </button>
+              {/* Project Tree Section */}
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 'var(--space-1)',
+                    paddingLeft: 'var(--space-2)',
+                    paddingRight: 'var(--space-1)',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 'var(--text-2xs)',
+                      fontWeight: 'var(--font-weight-medium)',
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    Projects
+                  </span>
+                  <button
+                    onClick={() => {
+                      onAddProject();
+                      if (isMobile) onToggleCollapse(true);
+                    }}
+                    className="btn-icon"
+                    style={{ width: 20, height: 20, color: '#ffffff', backgroundColor: 'var(--color-primary)' }}
+                    title="Create new project"
+                  >
+                    <Plus size={12} color="#ffffff" />
+                  </button>
+                </div>
+
+                <ProjectTree
+                  onAddProject={onAddProject}
+                  onAddSubproject={(pId) => {
+                    onAddSubproject(pId);
+                    if (isMobile) onToggleCollapse(true);
+                  }}
+                  onEditProject={(p) => {
+                    onEditProject(p);
+                    if (isMobile) onToggleCollapse(true);
+                  }}
+                />
+              </div>
             </div>
+          </>
+        )}
 
-            <ProjectTree
-              onAddProject={onAddProject}
-              onAddSubproject={(pId) => {
-                onAddSubproject(pId);
-                if (isMobile) onToggleCollapse(true);
-              }}
-              onEditProject={(p) => {
-                onEditProject(p);
-                if (isMobile) onToggleCollapse(true);
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Footer / Recycle Bin & Settings */}
-        <div
-          style={{
-            padding: 'var(--space-2) var(--space-2)',
-            borderTop: '1px solid var(--border-default)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <NavLink
-            to="/recycle-bin"
-            onClick={() => isMobile && onToggleCollapse(true)}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 8px',
-              borderRadius: 'var(--radius-sm)',
-              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-              fontSize: 'var(--text-xs)',
-              textDecoration: 'none',
-              transition: 'background-color var(--transition-fast)',
-            })}
-            title="Recycle Bin"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Trash2 size={15} />
-              <span>Recycle Bin</span>
-            </div>
-            {((deletedTasks?.length || 0) + (deletedProjects?.length || 0)) > 0 && (
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  padding: '1px 5px',
-                  borderRadius: 'var(--radius-xs)',
-                  backgroundColor: 'rgba(244, 63, 94, 0.15)',
-                  color: '#f43f5e',
-                }}
-              >
-                {(deletedTasks?.length || 0) + (deletedProjects?.length || 0)}
-              </span>
-            )}
-          </NavLink>
-
-          <NavLink
-            to="/settings"
-            onClick={() => isMobile && onToggleCollapse(true)}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              padding: '6px 8px',
-              borderRadius: 'var(--radius-sm)',
-              color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-              backgroundColor: isActive ? 'var(--bg-surface-active)' : 'transparent',
-              fontSize: 'var(--text-xs)',
-              textDecoration: 'none',
-            })}
-            title="Settings & Backup"
-          >
-            <Settings size={15} />
-            <span>Settings</span>
-          </NavLink>
-        </div>
+        {/* Animated Floating Pomodoro Timer Card at bottom of main sidebar (Item 6) */}
+        {isExtensionActive && isExtensionActive('pomodoro') && (
+          <PomodoroWidget variant="sidebar-card" />
+        )}
 
         {/* VS Code-style Draggable Resizer Handle */}
         {!isMobile && (

@@ -1,0 +1,37 @@
+/* ==========================================================================
+   Hue & View Theme: Solar Sunset
+   File: darkMode.css
+   Description: Dark mode theme mappings (active via [data-theme="dark"] or prefers-color-scheme)
+   ========================================================================== */
+
+[data-theme="dark"] {
+  --text_c: var(--text_light);
+  --background_c: var(--background_dark);
+  --surface_c: var(--dark_tones_2);
+  --surface_muted: var(--dark_tones_1);
+  --border_c: var(--dark_tones_1);
+  --soft_tone: var(--dark_tones_1);
+  --input_bg: var(--dark_tones_3);
+  --input_border: var(--dark_tones_1);
+
+  color-scheme: dark;
+  color: var(--text_c);
+  background-color: var(--background_c);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --text_c: var(--text_light);
+    --background_c: var(--background_dark);
+    --surface_c: var(--dark_tones_2);
+    --surface_muted: var(--dark_tones_1);
+    --border_c: var(--dark_tones_1);
+    --soft_tone: var(--dark_tones_1);
+    --input_bg: var(--dark_tones_3);
+    --input_border: var(--dark_tones_1);
+
+    color-scheme: dark;
+    color: var(--text_c);
+    background-color: var(--background_c);
+  }
+}

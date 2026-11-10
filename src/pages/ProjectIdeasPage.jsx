@@ -365,8 +365,27 @@ export const ProjectIdeasPage = () => {
                       <button
                         type="button"
                         onClick={() => setDeletingIdea(idea)}
-                        className="btn-icon"
-                        style={{ width: 28, height: 28, color: '#f43f5e' }}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          color: 'var(--color-danger, #f43f5e)',
+                          background: 'transparent',
+                          backgroundColor: 'transparent',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          transition: 'all var(--transition-fast)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-danger, #f43f5e)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border-default)';
+                        }}
                         title="Delete Idea"
                       >
                         <Trash2 size={13} />

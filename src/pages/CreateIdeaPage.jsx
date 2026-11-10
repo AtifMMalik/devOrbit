@@ -18,6 +18,8 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { SpellCheckInput, SpellCheckTextarea } from '../components/common/SpellCheckField';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
+import { useExtensions } from '../extensions/ExtensionContext';
+import { DomainResearchCard } from '../extensions/domain-research/DomainResearchCard';
 
 const COLOR_PRESETS = [
   '#6366f1', // Indigo
@@ -38,6 +40,19 @@ export const CreateIdeaPage = () => {
   const location = useLocation();
   const { ideas, createIdea, updateIdea, deleteIdea, convertIdeaToProject, setActiveProjectId } = useWorkspace();
   const { toastSuccess, toastInfo, toastError } = useToast();
+  const { isExtensionActive } = useExtensions();
+
+  const handleAddDomainToDescription = (domain) => {
+    setDescription((prev) => {
+      const trimmed = prev.trim();
+      const section = '\n\n### Candidate Domains:';
+      if (!trimmed.includes('### Candidate Domains:')) {
+        return trimmed ? `${trimmed}${section}\n- [ ] ${domain}` : `### Candidate Domains:\n- [ ] ${domain}`;
+      }
+      return `${trimmed}\n- [ ] ${domain}`;
+    });
+    toastSuccess(`Added ${domain} to project idea about field`);
+  };
 
   const existingIdea = ideaId ? (ideas || []).find((i) => i.id === ideaId) : location.state?.idea || null;
   const isEditing = Boolean(existingIdea);
@@ -265,14 +280,24 @@ export const CreateIdeaPage = () => {
                   type="button"
                   onClick={() => setColor(c)}
                   style={{
-                    width: 26,
-                    height: 26,
+                    width: 28,
+                    height: 28,
+                    minWidth: 28,
+                    minHeight: 28,
+                    maxWidth: 28,
+                    maxHeight: 28,
+                    padding: 0,
                     borderRadius: '50%',
+                    aspectRatio: '1 / 1',
+                    flexShrink: 0,
                     backgroundColor: c,
                     border: color === c ? '2px solid #ffffff' : '2px solid transparent',
                     boxShadow: color === c ? `0 0 10px ${c}` : 'none',
                     cursor: 'pointer',
                     transition: 'transform var(--transition-fast)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                   title={c}
                 />
@@ -294,6 +319,15 @@ export const CreateIdeaPage = () => {
             />
           </div>
         </div>
+
+        {/* Extension Card: Domain Name Research */}
+        {isExtensionActive && isExtensionActive('domain-research') && (
+          <DomainResearchCard
+            projectTitle={title}
+            projectDescription={description}
+            onAddDomainToDescription={handleAddDomainToDescription}
+          />
+        )}
 
         {/* Card 2: What's in this project (Target Features & Scope Checklist) */}
         <div

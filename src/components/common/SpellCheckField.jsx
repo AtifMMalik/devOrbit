@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Sparkles, Check, Plus, X } from 'lucide-react';
+import { useExtensions } from '../../extensions/ExtensionContext';
 import {
   analyzeTextSpelling,
   addToUserDictionary,
@@ -217,6 +218,28 @@ export const SpellCheckTextarea = ({
   onKeyDown,
   ...rest
 }) => {
+  const { isExtensionActive } = useExtensions();
+  const isEnabled = isExtensionActive ? isExtensionActive('spellcheck') : true;
+
+  if (!isEnabled) {
+    return (
+      <textarea
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        rows={rows}
+        style={style}
+        className={className}
+        onPaste={onPaste}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        ref={inputRef}
+        onKeyDown={onKeyDown}
+        {...rest}
+      />
+    );
+  }
+
   const [activeError, setActiveError] = useState(null);
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
   const [refreshKey, setRefreshKey] = useState(0);
@@ -453,6 +476,25 @@ export const SpellCheckInput = ({
   autoFocus = false,
   ...rest
 }) => {
+  const { isExtensionActive } = useExtensions();
+  const isEnabled = isExtensionActive ? isExtensionActive('spellcheck') : true;
+
+  if (!isEnabled) {
+    return (
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        style={style}
+        className={className}
+        required={required}
+        autoFocus={autoFocus}
+        {...rest}
+      />
+    );
+  }
+
   const [activeError, setActiveError] = useState(null);
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
   const [refreshKey, setRefreshKey] = useState(0);

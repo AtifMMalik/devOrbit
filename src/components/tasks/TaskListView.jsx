@@ -207,12 +207,23 @@ export const TaskListView = ({
                   <button
                     type="button"
                     onClick={handleStatusToggle}
+                    className="btn-status-toggle"
                     style={{
                       color: isDone ? 'var(--status-done-solid)' : 'var(--text-muted)',
                       cursor: 'pointer',
                       flexShrink: 0,
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'transparent',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      boxShadow: 'none',
+                      padding: 0,
+                      margin: 0,
+                      width: 'auto',
+                      height: 'auto',
+                      minWidth: 'unset',
                     }}
                     title={isDone ? 'Mark as current' : 'Mark as done'}
                   >
@@ -369,19 +380,19 @@ export const TaskListView = ({
                       type="button"
                       onClick={handleEditClick}
                       className="btn-icon"
-                      style={{ width: 24, height: 24 }}
+                      style={{ width: 24, height: 24, backgroundColor: 'var(--color-primary)', color: '#ffffff' }}
                       title="Edit task (popup)"
                     >
-                      <Edit size={12} />
+                      <Edit size={12} color="#ffffff" />
                     </button>
                     <button
                       type="button"
                       onClick={handleDeleteClick}
                       className="btn-icon btn-icon-danger"
-                      style={{ width: 24, height: 24, color: '#f43f5e' }}
+                      style={{ width: 24, height: 24, backgroundColor: 'var(--color-danger)', color: '#ffffff' }}
                       title="Move task to Recycle Bin"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={12} color="#ffffff" />
                     </button>
                   </div>
                 </div>

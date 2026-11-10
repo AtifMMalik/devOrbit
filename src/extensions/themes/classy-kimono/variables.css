@@ -1,0 +1,64 @@
+/* ==========================================================================
+   Hue & View Theme: Classy Kimono
+   File: variables.css
+   Description: Design tokens and custom property definitions
+   ========================================================================== */
+
+:root {
+  /* [>>> Brand Palette <<<] */
+  --primary: #7b1fa2;
+  --secondary: #512da8;
+  --tertiary: #ba68c8;
+  --accent: #f06292;
+  --hue: #4a148c;
+
+  /* [>>> Text Colors <<<] */
+  --text_dark: #2d1340;
+  --text_light: #ffffff;
+  --text_gray: #7b6888;
+
+  /* [>>> Background Colors <<<] */
+  --background_dark: #160d1e;
+  --background_light: #faf5fc;
+
+  /* [>>> Interactive - Buttons <<<] */
+  --button_default: #7b1fa2;
+  --button_hover: #6a1b9a;
+  --button_active: #4a148c;
+
+  /* [>>> Interactive - Links <<<] */
+  --link_default: #7b1fa2;
+  --link_hover: #ab47bc;
+  --link_visited: #4a148c;
+
+  /* [>>> Tones (Neutrals) <<<] */
+  --white_tones_1: #ffffff;
+  --white_tones_2: #f9f3fb;
+  --white_tones_3: #ede0f3;
+
+  --dark_tones_1: #2d1b3d;
+  --dark_tones_2: #1a0f25;
+  --dark_tones_3: #0f0717;
+
+  /* [>>> Typography & Layout Tokens <<<] */
+  --font_family: Merriweather, serif;
+  --border_radius_sm: 4px;
+  --border_radius: 8px;
+  --border_radius_lg: 16px;
+  --border_radius_full: 9999px;
+  --transition_fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition_normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow_sm: 0 2px 6px rgba(123, 31, 162, 0.12);
+  --shadow_md: 0 6px 18px rgba(123, 31, 162, 0.18), 0 2px 6px rgba(81, 45, 168, 0.1);
+  --shadow_lg: 0 14px 32px rgba(123, 31, 162, 0.22), 0 4px 12px rgba(240, 98, 146, 0.15);
+  --shadow_xl: 0 24px 48px rgba(123, 31, 162, 0.28);
+  --shadow_2xl: 0 35px 70px rgba(74, 20, 140, 0.35);
+  --shadow_colored: 0 10px 32px rgba(123, 31, 162, 0.45);
+
+  /* [>>> Gradients Tokens <<<] */
+  --gradient_subtle: linear-gradient(135deg, rgba(123, 31, 162, 0.08) 0%, rgba(240, 98, 146, 0.08) 100%);
+  --gradient_vibrant: linear-gradient(135deg, #7b1fa2 0%, #512da8 50%, #f06292 100%);
+  --gradient_surface: linear-gradient(180deg, rgba(123, 31, 162, 0.04) 0%, rgba(240, 98, 146, 0.02) 100%);
+  --gradient_mesh: radial-gradient(at 10% 10%, rgba(123, 31, 162, 0.18) 0px, transparent 50%), radial-gradient(at 90% 90%, rgba(240, 98, 146, 0.15) 0px, transparent 50%);
+  --gradient_hero: linear-gradient(135deg, #2d1b3d 0%, #1a0f25 50%, #0f0717 100%);
+}

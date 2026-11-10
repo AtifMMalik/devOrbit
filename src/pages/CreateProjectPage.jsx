@@ -28,6 +28,9 @@ import { RichImageDescriptionEditor } from '../components/common/RichImageDescri
 import { processProjectLogoFile, processDescriptionImage, getProjectInitials } from '../utils/imageUtils';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
+import { useExtensions } from '../extensions/ExtensionContext';
+import { SketchboardCanvas } from '../extensions/sketchboard/SketchboardCanvas';
+import { DomainResearchCard } from '../extensions/domain-research/DomainResearchCard';
 
 const COLOR_PRESETS = [
   '#6366f1', // Indigo
@@ -48,6 +51,7 @@ export const CreateProjectPage = () => {
   const { projectId: routeProjectId } = useParams();
   const { projects, createProject, updateProject, setActiveProjectId, getProject, addProjectTodo } = useWorkspace();
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const { isExtensionActive } = useExtensions();
 
   const editingProjectId = routeProjectId || location.state?.projectId || location.state?.project?.id;
   const existingProject = editingProjectId ? (getProject(editingProjectId) || projects.find((p) => p.id === editingProjectId)) : null;
@@ -61,6 +65,7 @@ export const CreateProjectPage = () => {
   // Step 1: Basic Details
   const [name, setName] = useState(existingProject?.name || '');
   const [description, setDescription] = useState(existingProject?.description || '');
+  const [sketchUrl, setSketchUrl] = useState(existingProject?.sketch || '');
   const [parentId, setParentId] = useState(initialParentId);
   const [color, setColor] = useState(existingProject?.color || '#6366f1');
   const [logo, setLogo] = useState(existingProject?.logo || null);
@@ -217,6 +222,7 @@ export const CreateProjectPage = () => {
       color,
       logo,
       tags,
+      sketch: sketchUrl,
     };
 
     if (isEditing && existingProject) {
@@ -234,7 +240,7 @@ export const CreateProjectPage = () => {
       toastSuccess(`Created project "${name}" successfully`);
       navigate(`/project/${newProj.id}/tasks`);
     }
-  }, [name, description, author, liveUrl, githubUrl, parentId, color, logo, tags, targetFeatures, isEditing, existingProject, updateProject, createProject, addProjectTodo, setActiveProjectId, navigate, toastError, toastSuccess]);
+  }, [name, description, sketchUrl, author, liveUrl, githubUrl, parentId, color, logo, tags, targetFeatures, isEditing, existingProject, updateProject, createProject, addProjectTodo, setActiveProjectId, navigate, toastError, toastSuccess]);
 
   // Support global Cmd + S shortcut to save project
   useEffect(() => {
@@ -562,9 +568,16 @@ export const CreateProjectPage = () => {
                     type="button"
                     onClick={() => setColor(preset)}
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 'var(--radius-full)',
+                      width: 30,
+                      height: 30,
+                      minWidth: 30,
+                      minHeight: 30,
+                      maxWidth: 30,
+                      maxHeight: 30,
+                      padding: 0,
+                      flexShrink: 0,
+                      aspectRatio: '1 / 1',
+                      borderRadius: '50%',
                       backgroundColor: preset,
                       border: color.toLowerCase() === preset.toLowerCase() ? '2px solid #ffffff' : '2px solid transparent',
                       boxShadow: color.toLowerCase() === preset.toLowerCase() ? '0 0 10px ' + preset : 'none',
@@ -584,9 +597,16 @@ export const CreateProjectPage = () => {
                 <label
                   style={{
                     position: 'relative',
-                    width: 32,
-                    height: 32,
-                    borderRadius: 'var(--radius-full)',
+                    width: 30,
+                    height: 30,
+                    minWidth: 30,
+                    minHeight: 30,
+                    maxWidth: 30,
+                    maxHeight: 30,
+                    padding: 0,
+                    flexShrink: 0,
+                    aspectRatio: '1 / 1',
+                    borderRadius: '50%',
                     backgroundColor: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase()) ? color : 'var(--bg-surface-active)',
                     border: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase())
                       ? '2px solid #ffffff'
@@ -658,6 +678,51 @@ export const CreateProjectPage = () => {
                 onModeChange={setDescTab}
               />
             </div>
+
+            {/* Domain Name Research Extension Card */}
+            {isExtensionActive && isExtensionActive('domain-research') && (
+              <DomainResearchCard
+                projectTitle={name}
+                projectDescription={description}
+                onAddDomainToDescription={(domain) => {
+                  setDescription((prev) => {
+                    const trimmed = prev.trim();
+                    const section = '\n\n### Candidate Domains:';
+                    if (!trimmed.includes('### Candidate Domains:')) {
+                      return trimmed ? `${trimmed}${section}\n- [ ] ${domain}` : `### Candidate Domains:\n- [ ] ${domain}`;
+                    }
+                    return `${trimmed}\n- [ ] ${domain}`;
+                  });
+                  toastSuccess(`Added ${domain} to project description`);
+                }}
+              />
+            )}
+
+            {/* Sketchboard Extension Card */}
+            {isExtensionActive && isExtensionActive('sketchboard') && (
+              <div
+                className="card"
+                style={{
+                  padding: 'var(--space-4) var(--space-5)',
+                  backgroundColor: 'var(--bg-surface)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-2-5)',
+                }}
+              >
+                <SketchboardCanvas
+                  entityId={existingProject?.id || 'new_project'}
+                  initialDataUrl={sketchUrl}
+                  onSave={(dataUrl) => {
+                    setSketchUrl(dataUrl);
+                    toastSuccess('Project illustration saved');
+                  }}
+                  onClear={() => setSketchUrl('')}
+                  title="Project Sketchboard & Whiteboard Illustration"
+                  defaultOpen={true}
+                />
+              </div>
+            )}
 
             {/* Step 1 Bottom Actions */}
             <div

@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Hue & View Theme: devOrbit Default
+   File: darkMode.css
+   Description: Dark mode theme mappings (active via [data-theme="dark"] or prefers-color-scheme)
+   ========================================================================== */
+
+[data-theme="dark"] {
+  --text_c: var(--text_light);
+  --background_c: var(--background_dark);
+  --surface_c: var(--dark_tones_2);
+  --surface_muted: var(--dark_tones_1);
+  --border_c: var(--dark_tones_1);
+  --soft_tone: var(--dark_tones_1);
+  --input_bg: var(--dark_tones_3);
+  --input_border: var(--dark_tones_1);
+
+  /* Semantic UI tokens mapped to dark mode theme */
+  --bg-app: var(--background_c);
+  --bg-sidebar: var(--surface_c);
+  --bg-header: var(--surface_c);
+  --bg-surface: var(--surface_c);
+  --bg-surface-hover: var(--surface_muted);
+  --bg-surface-active: var(--surface_muted);
+  --bg-card: var(--surface_c);
+  --bg-card-hover: var(--surface_muted);
+  --bg-card-subtle: var(--dark_tones_3);
+  --bg-elevated: var(--surface_muted);
+  --bg-overlay: rgba(4, 7, 13, 0.78);
+  --bg-input: var(--input_bg);
+  --bg-input-focus: var(--surface_c);
+
+  --border-subtle: var(--border_c);
+  --border-muted: var(--border_c);
+  --border-default: var(--border_c);
+  --border-hover: var(--primary);
+  --border-active: var(--primary);
+
+  --text-primary: var(--text_c);
+  --text-secondary: var(--text_gray);
+  --text-muted: #64748b;
+  --text-disabled: #475569;
+  --text-inverse: var(--text_dark);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--button_hover);
+  --color-primary-light: rgba(0, 132, 255, 0.12);
+  --color-primary-border: rgba(0, 132, 255, 0.32);
+  --color-primary-glow: 0 0 16px rgba(0, 132, 255, 0.25);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: #0ea5e9;
+  --color-accent-light: rgba(56, 189, 248, 0.12);
+  --color-accent-border: rgba(56, 189, 248, 0.28);
+
+  /* Status Colors (Dark Mode) */
+  --status-current-bg: rgba(0, 132, 255, 0.10);
+  --status-current-border: rgba(0, 132, 255, 0.26);
+  --status-current-text: var(--accent);
+  --status-current-solid: var(--primary);
+
+  --status-later-bg: rgba(245, 158, 11, 0.09);
+  --status-later-border: rgba(245, 158, 11, 0.22);
+  --status-later-text: #fbbf24;
+  --status-later-solid: #d97706;
+
+  --status-done-bg: rgba(16, 185, 129, 0.09);
+  --status-done-border: rgba(16, 185, 129, 0.22);
+  --status-done-text: #34d399;
+  --status-done-solid: #10b981;
+
+  --status-hotfix-bg: rgba(244, 63, 94, 0.12);
+  --status-hotfix-border: rgba(244, 63, 94, 0.32);
+  --status-hotfix-text: #fb7185;
+  --status-hotfix-solid: #f43f5e;
+
+  --status-blocked-border: rgba(244, 63, 94, 0.25);
+  --status-blocked-text: #fb7185;
+
+  /* Priority Colors (Dark Mode) */
+  --priority-urgent-bg: rgba(244, 63, 94, 0.10);
+  --priority-urgent-text: #fb7185;
+  --priority-urgent-border: rgba(244, 63, 94, 0.25);
+
+  --priority-high-bg: rgba(249, 115, 22, 0.10);
+  --priority-high-text: #fb923c;
+  --priority-high-border: rgba(249, 115, 22, 0.25);
+
+  --priority-medium-bg: rgba(234, 179, 8, 0.10);
+  --priority-medium-text: #facc15;
+  --priority-medium-border: rgba(234, 179, 8, 0.25);
+
+  --priority-low-bg: rgba(148, 163, 184, 0.08);
+  --priority-low-text: var(--text_gray);
+  --priority-low-border: rgba(148, 163, 184, 0.20);
+
+  /* Tag Palette (Dark Mode) */
+  --tag-feature-bg: rgba(0, 132, 255, 0.12);
+  --tag-feature-text: #7cc5fb;
+  --tag-feature-border: rgba(0, 132, 255, 0.25);
+
+  --tag-bug-bg: rgba(244, 63, 94, 0.10);
+  --tag-bug-text: #fca5a5;
+  --tag-bug-border: rgba(244, 63, 94, 0.22);
+
+  --tag-doc-bg: rgba(16, 185, 129, 0.10);
+  --tag-doc-text: #6ee7b7;
+  --tag-doc-border: rgba(16, 185, 129, 0.22);
+
+  --tag-refactor-bg: rgba(168, 85, 247, 0.10);
+  --tag-refactor-text: #d8b4fe;
+  --tag-refactor-border: rgba(168, 85, 247, 0.22);
+
+  --tag-testing-bg: rgba(245, 158, 11, 0.10);
+  --tag-testing-text: #fcd34d;
+  --tag-testing-border: rgba(245, 158, 11, 0.22);
+
+  --tag-ui-bg: rgba(236, 72, 153, 0.10);
+  --tag-ui-text: #f472b6;
+  --tag-ui-border: rgba(236, 72, 153, 0.22);
+
+  --tag-devops-bg: rgba(14, 165, 233, 0.10);
+  --tag-devops-text: #7dd3fc;
+  --tag-devops-border: rgba(14, 165, 233, 0.22);
+
+  --tag-api-bg: rgba(20, 184, 166, 0.10);
+  --tag-api-text: #5eead4;
+  --tag-api-border: rgba(20, 184, 166, 0.22);
+
+  --tag-default-bg: rgba(148, 163, 184, 0.08);
+  --tag-default-text: var(--text_gray);
+  --tag-default-border: rgba(148, 163, 184, 0.18);
+
+  /* Mention Pills & Inline Highlights */
+  --mention-project-bg: rgba(99, 102, 241, 0.12);
+  --mention-project-text: #818cf8;
+  --mention-project-border: rgba(99, 102, 241, 0.25);
+
+  --mention-task-bg: rgba(0, 132, 255, 0.12);
+  --mention-task-text: var(--primary);
+  --mention-task-border: rgba(0, 132, 255, 0.25);
+
+  --search-highlight-bg: rgba(251, 191, 36, 0.35);
+  --search-highlight-border: rgba(245, 158, 11, 0.40);
+  --search-highlight-active-bg: #f59e0b;
+  --search-highlight-active-text: #000000;
+  --search-highlight-active-border: #d97706;
+
+  --btn-danger-bg: rgba(244, 63, 94, 0.12);
+  --btn-danger-text: #f43f5e;
+  --btn-danger-border: rgba(244, 63, 94, 0.28);
+  --btn-danger-hover-bg: #f43f5e;
+  --btn-danger-hover-text: #ffffff;
+
+  --spellcheck-wavy-color: #f43f5e;
+
+  /* Glassmorphism & Scrollbars */
+  --glass-bg: rgba(18, 24, 41, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(10px);
+
+  --scrollbar-track: var(--background_c);
+  --scrollbar-thumb: var(--border_c);
+  --scrollbar-thumb-hover: #2e3e63;
+
+  color-scheme: dark;
+  color: var(--text_c);
+  background-color: var(--background_c);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    color: var(--text_c);
+    background-color: var(--background_c);
+  }
+}

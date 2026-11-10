@@ -11,6 +11,8 @@ import { RichImageDescriptionEditor } from '../common/RichImageDescriptionEditor
 import { processProjectLogoFile, processDescriptionImage } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
+import { useExtensions } from '../../extensions/ExtensionContext';
+import { SketchboardCanvas } from '../../extensions/sketchboard/SketchboardCanvas';
 
 const COLOR_PRESETS = [
   '#6366f1', // Indigo
@@ -33,6 +35,7 @@ export const ProjectModal = ({
 }) => {
   const { projects, createProject, updateProject, deleteProject, setActiveProjectId } = useWorkspace();
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const { isExtensionActive } = useExtensions();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -42,6 +45,7 @@ export const ProjectModal = ({
   const [parentId, setParentId] = useState(initialParentId);
   const [color, setColor] = useState('#6366f1');
   const [logo, setLogo] = useState(null);
+  const [sketchUrl, setSketchUrl] = useState('');
   const [isProcessingLogo, setIsProcessingLogo] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
@@ -62,6 +66,7 @@ export const ProjectModal = ({
       setParentId(editingProject.parentId || null);
       setColor(editingProject.color || '#6366f1');
       setLogo(editingProject.logo || null);
+      setSketchUrl(editingProject.sketch || '');
       setTags(editingProject.tags || []);
     } else {
       setName('');
@@ -72,6 +77,7 @@ export const ProjectModal = ({
       setParentId(initialParentId);
       setColor(COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)]);
       setLogo(null);
+      setSketchUrl('');
       setTags([]);
     }
   }, [editingProject, initialParentId, isOpen]);
@@ -185,6 +191,7 @@ export const ProjectModal = ({
         color,
         logo,
         tags,
+        sketch: sketchUrl,
       });
       toastSuccess(`Updated "${name}" successfully`);
     } else {
@@ -198,6 +205,7 @@ export const ProjectModal = ({
         color,
         logo,
         tags,
+        sketch: sketchUrl,
       });
       setActiveProjectId(newProj.id);
       toastSuccess(`Created "${name}" successfully`);
@@ -381,6 +389,32 @@ export const ProjectModal = ({
           />
         </div>
 
+        {/* Whiteboard / Sketchboard Canvas (Sketchboard Extension) */}
+        {isExtensionActive('sketchboard') && (
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-1)',
+              }}
+            >
+              Project Sketchboard / Illustration
+            </label>
+            <SketchboardCanvas
+              initialDataUrl={sketchUrl}
+              initialSketch={sketchUrl}
+              onSave={(dataUrl) => setSketchUrl(dataUrl)}
+              onClear={() => setSketchUrl('')}
+              entityType="project"
+              entityId={editingProject?.id || 'new'}
+              defaultOpen={true}
+            />
+          </div>
+        )}
+
         {/* Project Metadata: Author, Live Link, Github Link */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 'var(--space-3)' }}>
           {/* Author */}
@@ -484,9 +518,16 @@ export const ProjectModal = ({
                 type="button"
                 onClick={() => setColor(preset)}
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 'var(--radius-full)',
+                  width: 28,
+                  height: 28,
+                  minWidth: 28,
+                  minHeight: 28,
+                  maxWidth: 28,
+                  maxHeight: 28,
+                  padding: 0,
+                  borderRadius: '50%',
+                  aspectRatio: '1 / 1',
+                  flexShrink: 0,
                   backgroundColor: preset,
                   border: color.toLowerCase() === preset.toLowerCase() ? '2px solid #ffffff' : '2px solid transparent',
                   boxShadow: color.toLowerCase() === preset.toLowerCase() ? '0 0 10px ' + preset : 'none',
@@ -506,9 +547,16 @@ export const ProjectModal = ({
             <label
               style={{
                 position: 'relative',
-                width: 30,
-                height: 30,
-                borderRadius: 'var(--radius-full)',
+                width: 28,
+                height: 28,
+                minWidth: 28,
+                minHeight: 28,
+                maxWidth: 28,
+                maxHeight: 28,
+                padding: 0,
+                borderRadius: '50%',
+                aspectRatio: '1 / 1',
+                flexShrink: 0,
                 backgroundColor: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase()) ? color : 'var(--bg-surface-active)',
                 border: !COLOR_PRESETS.map((c) => c.toLowerCase()).includes(color.toLowerCase())
                   ? '2px solid #ffffff'

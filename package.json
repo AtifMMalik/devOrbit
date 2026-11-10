@@ -16,7 +16,8 @@
     "react": "^19.2.8",
     "react-activity-calendar": "^3.2.1",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3"
+    "react-router-dom": "^7.18.3",
+    "signature_pad": "^5.1.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

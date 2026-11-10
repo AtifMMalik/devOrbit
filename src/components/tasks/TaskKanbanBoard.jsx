@@ -563,10 +563,10 @@ export const TaskKanbanBoard = ({
                 onAddTask('done');
               }}
               className="btn-icon"
-              style={{ width: 22, height: 22 }}
+              style={{ width: 22, height: 22, backgroundColor: 'var(--color-primary)', color: '#ffffff' }}
               title="Add task directly to Done"
             >
-              <Plus size={12} />
+              <Plus size={12} color="#ffffff" />
             </button>
             <span style={{ color: 'var(--text-muted)' }}>
               {isDoneExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

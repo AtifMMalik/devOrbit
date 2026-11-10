@@ -1,0 +1,413 @@
+[
+  {
+    "id": "theme-devorbit-default",
+    "slug": "devorbit-default",
+    "name": "devOrbit Azure Space Theme",
+    "version": "1.0.0",
+    "author": "devOrbit Team",
+    "description": "The default devOrbit brand identity featuring Electric Orbit Blue and Midnight Space slate tones.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": true,
+    "type": "theme",
+    "directory": "src/extensions/themes/devorbit-default",
+    "config": {
+      "themeName": "devOrbit Default",
+      "primaryColor": "#0084ff",
+      "accentColor": "#38bdf8"
+    }
+  },
+  {
+    "id": "theme-aggressive-red",
+    "slug": "aggressive-red",
+    "name": "Aggressive Red",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "High energy crimson palette with bold accents and razor-sharp box geometry.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/aggressive-red",
+    "config": {
+      "themeName": "Aggressive Red",
+      "primaryColor": "#d50000",
+      "accentColor": "#ff1744"
+    }
+  },
+  {
+    "id": "theme-black-forest",
+    "slug": "black-forest",
+    "name": "Black Forest Theme",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Deep forest greens, dark pine tones, and vibrant lime accents exported from Hue & View.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/black-forest",
+    "config": {
+      "themeName": "Black Forest",
+      "primaryColor": "#37474f",
+      "accentColor": "#8bc34a"
+    }
+  },
+  {
+    "id": "theme-classy-kimono",
+    "slug": "classy-kimono",
+    "name": "Classy Kimono",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Rich royal purple paired with delicate cherry rose blossom highlights.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/classy-kimono",
+    "config": {
+      "themeName": "Classy Kimono",
+      "primaryColor": "#7b1fa2",
+      "accentColor": "#f06292"
+    }
+  },
+  {
+    "id": "theme-cyberpunk-neon",
+    "slug": "cyberpunk-neon",
+    "name": "Cyberpunk Neon",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "High-contrast electric cyan and hot magenta dark cyberpunk aesthetics.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/cyberpunk-neon",
+    "config": {
+      "themeName": "Cyberpunk Neon",
+      "primaryColor": "#00f0ff",
+      "accentColor": "#ff007f"
+    }
+  },
+  {
+    "id": "theme-emerald-forest",
+    "slug": "emerald-forest",
+    "name": "Emerald Forest",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Natural lush woodland greens with chartreuse accents.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/emerald-forest",
+    "config": {
+      "themeName": "Emerald Forest",
+      "primaryColor": "#2e7d32",
+      "accentColor": "#c0ca33"
+    }
+  },
+  {
+    "id": "theme-german-engineering",
+    "slug": "german-engineering",
+    "name": "German Engineering",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Industrial charcoal slate with amber gold precision and high contrast mechanics.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/german-engineering",
+    "config": {
+      "themeName": "German Engineering",
+      "primaryColor": "#37474f",
+      "accentColor": "#fbc02d"
+    }
+  },
+  {
+    "id": "theme-nordic-frost",
+    "slug": "nordic-frost",
+    "name": "Nordic Frost",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Crisp Scandinavian glacial blue and amber contrast inspired by Nordic fjords.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/nordic-frost",
+    "config": {
+      "themeName": "Nordic Frost",
+      "primaryColor": "#0284c7",
+      "accentColor": "#d97706"
+    }
+  },
+  {
+    "id": "theme-ocean-breeze",
+    "slug": "ocean-breeze",
+    "name": "Ocean Breeze",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Refreshing aquatic turquoise and playful coral pink coastal shades.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/ocean-breeze",
+    "config": {
+      "themeName": "Ocean Breeze",
+      "primaryColor": "#00bcd4",
+      "accentColor": "#ff4081"
+    }
+  },
+  {
+    "id": "theme-paper-pen",
+    "slug": "paper-pen",
+    "name": "Paper Pen",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Classic fountain ink blue on warm parchment dark tone with vintage red accents.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/paper-pen",
+    "config": {
+      "themeName": "Paper Pen",
+      "primaryColor": "#1e3a8a",
+      "accentColor": "#b91c1c"
+    }
+  },
+  {
+    "id": "theme-precision-blueprint",
+    "slug": "precision-blueprint",
+    "name": "Precision Blueprint",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Architectural grid blueprint palette with drafting rose calipers and purple accents.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/precision-blueprint",
+    "config": {
+      "themeName": "Precision Blueprint",
+      "primaryColor": "#3b82f6",
+      "accentColor": "#f43f5e"
+    }
+  },
+  {
+    "id": "theme-professional-blue",
+    "slug": "professional-blue",
+    "name": "Professional Blue",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Corporate sapphire and sky blue on executive navy backgrounds.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/professional-blue",
+    "config": {
+      "themeName": "Professional Blue",
+      "primaryColor": "#1e88e5",
+      "accentColor": "#42a5f5"
+    }
+  },
+  {
+    "id": "theme-solar-sunset",
+    "slug": "solar-sunset",
+    "name": "Solar Sunset",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Warm terracotta sunset orange and golden amber glow.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/solar-sunset",
+    "config": {
+      "themeName": "Solar Sunset",
+      "primaryColor": "#ff5722",
+      "accentColor": "#ff9800"
+    }
+  },
+  {
+    "id": "theme-soothing-green",
+    "slug": "soothing-green",
+    "name": "Soothing Green",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Calming botanical jade and soft herbal mint for low-strain focus sessions.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/soothing-green",
+    "config": {
+      "themeName": "Soothing Green",
+      "primaryColor": "#43a047",
+      "accentColor": "#81c784"
+    }
+  },
+  {
+    "id": "theme-tokyo-vibes",
+    "slug": "tokyo-vibes",
+    "name": "Tokyo Vibes",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Vibrant Shibuya nightlife neon with sakura pink, electric gold, and indigo.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/tokyo-vibes",
+    "config": {
+      "themeName": "Tokyo Vibes",
+      "primaryColor": "#ff4081",
+      "accentColor": "#ffd740"
+    }
+  },
+  {
+    "id": "theme-winter-crystals",
+    "slug": "winter-crystals",
+    "name": "Winter Crystals",
+    "version": "1.0.0",
+    "author": "Hue & View",
+    "description": "Frozen crystal azure with sparkling frosty pink highlights.",
+    "category": "Themes",
+    "icon": "Palette",
+    "installed": true,
+    "enabled": false,
+    "builtIn": false,
+    "type": "theme",
+    "directory": "src/extensions/themes/winter-crystals",
+    "config": {
+      "themeName": "Winter Crystals",
+      "primaryColor": "#0288d1",
+      "accentColor": "#ff80ab"
+    }
+  },
+  {
+    "id": "spellcheck",
+    "name": "Developer Spell Checker",
+    "version": "1.2.0",
+    "author": "devOrbit Core",
+    "description": "Word-style inline spelling analysis with wavy underlines, suggestions popover, technical jargon dictionary, and session ignore list.",
+    "category": "Productivity",
+    "icon": "SpellCheck",
+    "installed": true,
+    "enabled": true,
+    "builtIn": false,
+    "type": "tool",
+    "directory": "src/extensions/spellcheck",
+    "config": {
+      "checkOnType": true,
+      "ignoreTechnicalTerms": true,
+      "wavyUnderline": true
+    }
+  },
+  {
+    "id": "domain-research",
+    "name": "Domain Name Research",
+    "version": "1.1.0",
+    "author": "devOrbit Labs",
+    "description": "Search available domains, verify TLD availability, generate AI brandable names, and attach domains directly to project ideas.",
+    "category": "Developer Tools",
+    "icon": "Globe",
+    "installed": true,
+    "enabled": true,
+    "builtIn": false,
+    "type": "ui-component",
+    "directory": "src/extensions/domain-research",
+    "config": {
+      "defaultTlds": [".com", ".dev", ".io", ".ai", ".app", ".co"],
+      "enableAIGenerator": true
+    }
+  },
+  {
+    "id": "sketchboard",
+    "name": "Sketchboard Whiteboard",
+    "version": "1.0.0",
+    "author": "devOrbit Creative",
+    "description": "Interactive whiteboard drawing canvas embedded in Task and Project modals to draw sketches, UI wireframes, and diagrams.",
+    "category": "Design",
+    "icon": "PenTool",
+    "installed": true,
+    "enabled": true,
+    "builtIn": false,
+    "type": "ui-component",
+    "directory": "src/extensions/sketchboard",
+    "config": {
+      "storageKeyPrefix": "devorbit_extension_sketch_",
+      "canvasWidth": 800,
+      "canvasHeight": 400
+    }
+  },
+  {
+    "id": "pomodoro",
+    "name": "Pomodoro Focus Timer",
+    "version": "1.0.0",
+    "author": "devOrbit Labs",
+    "description": "Productivity session timer with 25m work / 5m break intervals and completed cycle metrics.",
+    "category": "Productivity",
+    "icon": "Timer",
+    "installed": true,
+    "enabled": true,
+    "builtIn": false,
+    "type": "widget",
+    "directory": "src/extensions/pomodoro",
+    "config": {
+      "workMinutes": 25,
+      "breakMinutes": 5
+    }
+  },
+  {
+    "id": "markdown-exporter",
+    "name": "Markdown Task Exporter",
+    "version": "1.0.0",
+    "author": "devOrbit Core",
+    "description": "Exports filtered tasks and project documentation to formatted Markdown with custom delimiter support.",
+    "category": "Developer Tools",
+    "icon": "FileText",
+    "installed": true,
+    "enabled": true,
+    "builtIn": false,
+    "type": "tool",
+    "directory": "src/utils/issueExporter.js",
+    "config": {
+      "defaultFormat": "markdown"
+    }
+  }
+]

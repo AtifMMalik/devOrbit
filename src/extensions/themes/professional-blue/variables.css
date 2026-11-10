@@ -1,0 +1,64 @@
+/* ==========================================================================
+   Hue & View Theme: Professional Blue
+   File: variables.css
+   Description: Design tokens and custom property definitions
+   ========================================================================== */
+
+:root {
+  /* [>>> Brand Palette <<<] */
+  --primary: #1e88e5;
+  --secondary: #1565c0;
+  --tertiary: #bbdefb;
+  --accent: #42a5f5;
+  --hue: #0d47a1;
+
+  /* [>>> Text Colors <<<] */
+  --text_dark: #0a2540;
+  --text_light: #f0f7ff;
+  --text_gray: #627d98;
+
+  /* [>>> Background Colors <<<] */
+  --background_dark: #071727;
+  --background_light: #f4f8fc;
+
+  /* [>>> Interactive - Buttons <<<] */
+  --button_default: #1e88e5;
+  --button_hover: #1565c0;
+  --button_active: #0d47a1;
+
+  /* [>>> Interactive - Links <<<] */
+  --link_default: #1e88e5;
+  --link_hover: #42a5f5;
+  --link_visited: #1565c0;
+
+  /* [>>> Tones (Neutrals) <<<] */
+  --white_tones_1: #ffffff;
+  --white_tones_2: #f0f7ff;
+  --white_tones_3: #d9e2ec;
+
+  --dark_tones_1: #102a43;
+  --dark_tones_2: #081c30;
+  --dark_tones_3: #030d17;
+
+  /* [>>> Typography & Layout Tokens <<<] */
+  --font_family: Open Sans, sans-serif;
+  --border_radius_sm: 4px;
+  --border_radius: 8px;
+  --border_radius_lg: 14px;
+  --border_radius_full: 9999px;
+  --transition_fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition_normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow_sm: 0 1px 3px rgba(37, 99, 235, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow_md: 0 4px 12px rgba(37, 99, 235, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow_lg: 0 10px 24px rgba(37, 99, 235, 0.15), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow_xl: 0 20px 38px rgba(37, 99, 235, 0.18);
+  --shadow_2xl: 0 30px 60px rgba(37, 99, 235, 0.22);
+  --shadow_colored: 0 8px 28px rgba(37, 99, 235, 0.38);
+
+  /* [>>> Gradients Tokens <<<] */
+  --gradient_subtle: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(30, 64, 175, 0.06) 100%);
+  --gradient_vibrant: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  --gradient_surface: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --gradient_mesh: radial-gradient(at 15% 15%, rgba(37, 99, 235, 0.14) 0px, transparent 50%), radial-gradient(at 85% 85%, rgba(30, 64, 175, 0.12) 0px, transparent 50%);
+  --gradient_hero: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+}

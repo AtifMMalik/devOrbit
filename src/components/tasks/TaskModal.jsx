@@ -9,6 +9,8 @@ import { RichImageDescriptionEditor } from '../common/RichImageDescriptionEditor
 import { processDescriptionImage } from '../../utils/imageUtils';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useToast } from '../../context/ToastContext';
+import { useExtensions } from '../../extensions/ExtensionContext';
+import { SketchboardCanvas } from '../../extensions/sketchboard/SketchboardCanvas';
 import { generateId } from '../../utils/idGenerator';
 
 const DRAFT_STORAGE_KEY = 'devorbit_task_draft';
@@ -24,6 +26,7 @@ export const TaskModal = ({
 }) => {
   const { projects, createTask, updateTask, deleteTask } = useWorkspace();
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const { isExtensionActive } = useExtensions();
 
   const [projectId, setProjectId] = useState(defaultProjectId);
   const [title, setTitle] = useState('');
@@ -38,6 +41,7 @@ export const TaskModal = ({
   const [tagInput, setTagInput] = useState('');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
+  const [sketchUrl, setSketchUrl] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
   const [descTab, setDescTab] = useState('edit');
   const [isProcessingDescImg, setIsProcessingDescImg] = useState(false);
@@ -62,8 +66,10 @@ export const TaskModal = ({
       setIsHotfix(Boolean(editingTask.isHotfix || (editingTask.tags && editingTask.tags.includes('hotfix'))));
       setTags(editingTask.tags || ['feature']);
       setSubtasks(editingTask.subtasks || []);
+      setSketchUrl(editingTask.sketch || '');
       setHasDraft(false);
     } else {
+      setSketchUrl('');
       // Check for saved draft in create mode
       let loadedFromDraft = false;
       try {
@@ -297,6 +303,7 @@ export const TaskModal = ({
       deadline,
       completionNote,
       isHotfix,
+      sketch: sketchUrl,
       tags: isHotfix && !tags.includes('hotfix') ? [...tags, 'hotfix'] : tags,
       subtasks,
     };
@@ -561,6 +568,16 @@ export const TaskModal = ({
             onModeChange={setDescTab}
           />
         </div>
+
+        {/* Sketchboard Extension: Whiteboard Illustration Canvas */}
+        {isExtensionActive && isExtensionActive('sketchboard') && (
+          <SketchboardCanvas
+            entityId={editingTask?.id || 'new_task'}
+            initialDataUrl={sketchUrl}
+            onSave={(dataUrl) => setSketchUrl(dataUrl)}
+            title="Task Whiteboard & Sketch"
+          />
+        )}
 
         {/* Completion Note: ONLY visible when editing a task AND task is being completed or closed */}
         {Boolean(editingTask) && status === 'done' && (

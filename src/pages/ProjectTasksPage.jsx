@@ -381,7 +381,8 @@ export const ProjectTasksPage = () => {
                     padding: '10px 18px',
                     justifyContent: 'center',
                     fontSize: 'var(--text-xs)',
-                    fontWeight: 'var(--font-weight-medium)',
+                    fontWeight: 'var(--font-weight-bold, 700)',
+                    letterSpacing: '0.02em',
                   }}
                 >
                   Add List

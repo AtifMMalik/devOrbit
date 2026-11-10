@@ -126,11 +126,26 @@ export const ProjectChecklistSection = ({
                 e.stopPropagation();
                 onDeleteList();
               }}
-              className="btn-icon btn-icon-danger"
-              style={{ width: 22, height: 22, color: 'var(--text-muted)' }}
+              style={{
+                width: 22,
+                height: 22,
+                color: 'var(--text-muted)',
+                background: 'transparent',
+                backgroundColor: 'transparent',
+                border: 'none',
+                boxShadow: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                transition: 'color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger, #f43f5e)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
               title={`Delete "${title}" list`}
             >
-              <Trash2 size={12} />
+              <Trash2 size={13} />
             </button>
           )}
 
@@ -263,22 +278,30 @@ export const ProjectChecklistSection = ({
                   }}
                 />
 
-                {/* Red Delete Button */}
+                {/* Red Delete Button without background (Item 5) */}
                 <button
                   type="button"
                   onClick={() => onDelete(item.id)}
-                  className="btn-icon btn-icon-danger"
                   style={{
-                    color: '#f43f5e',
+                    color: 'var(--color-danger, #f43f5e)',
                     cursor: 'pointer',
                     border: 'none',
-                    background: 'none',
-                    padding: '3px',
-                    display: 'flex',
+                    background: 'transparent',
+                    backgroundColor: 'transparent',
+                    boxShadow: 'none',
+                    padding: 0,
+                    width: 22,
+                    height: 22,
+                    display: 'inline-flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     borderRadius: 'var(--radius-xs)',
                     flexShrink: 0,
+                    opacity: 0.8,
+                    transition: 'opacity var(--transition-fast)',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.8'; }}
                   title="Delete item"
                 >
                   <Trash2 size={13} />

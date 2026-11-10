@@ -138,10 +138,10 @@ export const TaskKanbanColumn = ({
               type="button"
               onClick={() => onExportColumn(status)}
               className="btn-icon"
-              style={{ width: 20, height: 20 }}
+              style={{ width: 20, height: 20, backgroundColor: 'var(--color-primary)', color: '#ffffff' }}
               title={`Copy / Export ${title} issues (Markdown or JSON)`}
             >
-              <FileDown size={12} />
+              <FileDown size={12} color="#ffffff" />
             </button>
           )}
 
@@ -149,10 +149,10 @@ export const TaskKanbanColumn = ({
             type="button"
             onClick={() => onAddTask(status)}
             className="btn-icon"
-            style={{ width: 20, height: 20 }}
+            style={{ width: 20, height: 20, backgroundColor: 'var(--color-primary)', color: '#ffffff' }}
             title={`Add task to ${title}`}
           >
-            <Plus size={12} />
+            <Plus size={12} color="#ffffff" />
           </button>
         </div>
       </div>

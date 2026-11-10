@@ -337,21 +337,32 @@ export const TaskCard = ({
               marginBottom: '4px',
             }}
           >
-            {/* Status toggle checkbox */}
+            {/* Status toggle checkbox without any button container (Item 3) */}
             <button
               type="button"
               onClick={handleStatusToggle}
+              className="btn-status-toggle"
               style={{
                 color: isDone ? 'var(--status-done-solid)' : 'var(--text-muted)',
                 cursor: 'pointer',
                 flexShrink: 0,
                 marginTop: '2px',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
+                background: 'transparent',
+                backgroundColor: 'transparent',
+                border: 'none',
+                boxShadow: 'none',
+                padding: 0,
+                margin: 0,
+                width: 'auto',
+                height: 'auto',
+                minWidth: 'unset',
               }}
               title={isDone ? 'Mark in progress' : 'Mark completed'}
             >
-              {isDone ? <CheckCircle2 size={15} /> : <Circle size={15} />}
+              {isDone ? <CheckCircle2 size={16} /> : <Circle size={16} />}
             </button>
 
             {/* Subtle chevron indicating dropdown */}
@@ -443,19 +454,19 @@ export const TaskCard = ({
                 type="button"
                 onClick={handleEditClick}
                 className="btn-icon"
-                style={{ width: 22, height: 22, padding: 0 }}
+                style={{ width: 22, height: 22, padding: 0, backgroundColor: 'var(--color-primary)', color: '#ffffff' }}
                 title="Edit task"
               >
-                <Edit size={12} />
+                <Edit size={12} color="#ffffff" />
               </button>
               <button
                 type="button"
                 onClick={handleDeleteClick}
                 className="btn-icon btn-icon-danger"
-                style={{ width: 22, height: 22, padding: 0, color: '#f43f5e' }}
+                style={{ width: 22, height: 22, padding: 0, backgroundColor: 'var(--color-danger)', color: '#ffffff' }}
                 title="Move task to Recycle Bin"
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} color="#ffffff" />
               </button>
             </div>
           </div>
@@ -780,10 +791,16 @@ export const TaskCard = ({
                     <button
                       type="button"
                       onClick={(e) => handleSubtaskToggle(e, sub.id)}
+                      className="btn-status-toggle"
                       style={{
                         color: sub.completed ? 'var(--status-done-solid)' : 'var(--text-muted)',
                         cursor: 'pointer',
                         padding: 0,
+                        margin: 0,
+                        background: 'transparent',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        boxShadow: 'none',
                         display: 'flex',
                         alignItems: 'center',
                       }}

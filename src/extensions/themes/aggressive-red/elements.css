@@ -1,0 +1,148 @@
+/* ==========================================================================
+   Hue & View Theme: Aggressive Red
+   File: elements.css
+   Description: Base HTML element styling using theme design tokens
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font_family);
+  color: var(--text_c);
+  background-color: var(--background_c);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.5em;
+  color: var(--text_c);
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; }
+
+p {
+  margin-bottom: 1rem;
+}
+
+/* Links */
+a {
+  color: var(--link_default);
+  text-decoration: none;
+  transition: color var(--transition_fast);
+}
+
+a:hover {
+  color: var(--link_hover);
+}
+
+a:visited {
+  color: var(--link_visited);
+}
+
+/* Base Form Elements */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  border-radius: var(--border_radius_sm);
+  padding: 9px 14px;
+  outline: none;
+  border: 1px solid var(--input_border, var(--soft_tone));
+  background-color: var(--input_bg, var(--surface_c));
+  color: var(--text_c);
+  transition: border-color var(--transition_fast), box-shadow var(--transition_fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+button {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--border_radius);
+  border: none;
+  padding: 10px 18px;
+  background-color: var(--button_default);
+  color: var(--text_light);
+  cursor: pointer;
+  transition: background-color var(--transition_fast), transform var(--transition_fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  background-color: var(--button_hover);
+}
+
+button:active {
+  background-color: var(--button_active);
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Blockquotes, Code & Tables */
+blockquote {
+  border-left: 4px solid var(--primary);
+  padding: 10px 16px;
+  margin: 1.25rem 0;
+  background-color: var(--surface_muted);
+  border-radius: 0 var(--border_radius_sm) var(--border_radius_sm) 0;
+  color: var(--text_c);
+}
+
+code, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  background-color: var(--surface_muted);
+  border: 1px solid var(--border_c);
+  border-radius: var(--border_radius_sm);
+}
+
+code {
+  padding: 2px 6px;
+}
+
+pre {
+  padding: 14px 18px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th, td {
+  border: 1px solid var(--border_c);
+  padding: 10px 14px;
+  text-align: left;
+}
+
+th {
+  background-color: var(--surface_muted);
+  font-weight: 600;
+}

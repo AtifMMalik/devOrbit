@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search,
-  Sun,
-  Moon,
   Download,
   FolderPlus,
   RotateCw,
-  PanelLeftOpen,
   Menu,
   Maximize,
   Minimize,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { useTheme } from '../../context/ThemeContext';
 import { exportWorkspaceJSON } from '../../utils/storage';
 import { useToast } from '../../context/ToastContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -28,7 +24,6 @@ export const Header = ({
   onToggleSidebar,
   isMobile = false,
 }) => {
-  const { theme, toggleTheme } = useTheme();
   const { projects, tasks, notes, activeProjectId, getProject } = useWorkspace();
   const { toastSuccess, toastInfo } = useToast();
   const { isInstallable, isInstalled, isReloading, hasUpdate, promptInstall, reloadPWA } = usePWAInstall();
@@ -87,9 +82,9 @@ export const Header = ({
         gap: 'var(--space-2)',
       }}
     >
-      {/* Left: Open Sidebar Button & Quick Search Bar */}
+      {/* Left: Quick Search Bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        {(sidebarCollapsed || isMobile) && (
+        {isMobile && (
           <button
             type="button"
             onClick={onToggleSidebar}
@@ -102,9 +97,9 @@ export const Header = ({
               backgroundColor: 'var(--bg-surface)',
               color: 'var(--text-primary)',
             }}
-            title={isMobile ? 'Open Menu' : 'Expand Sidebar (Cmd+B)'}
+            title="Open Menu"
           >
-            {isMobile ? <Menu size={16} /> : <PanelLeftOpen size={16} />}
+            <Menu size={16} />
           </button>
         )}
 
@@ -131,17 +126,13 @@ export const Header = ({
 
       {/* Right: + New Project button, Backup Export, Reload app, Theme toggle, Fullscreen */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        {/* New Project Button with Theme Primary Color */}
         <Button
           variant="primary"
           size="sm"
           icon={FolderPlus}
           onClick={() => onNewProject(null)}
           title="Create New Project (⌘⇧N)"
-          style={{
-            backgroundColor: '#6366f1',
-            borderColor: '#4f46e5',
-            color: '#ffffff',
-          }}
         >
           New Project
         </Button>
@@ -150,6 +141,7 @@ export const Header = ({
           onClick={handleStartExport}
           className="btn-icon"
           title="Export JSON Backup"
+          style={{ color: '#ffffff' }}
         >
           <Download size={14} />
         </button>
@@ -164,7 +156,7 @@ export const Header = ({
           title={hasUpdate ? 'Update available! Click to reload' : 'Reload App & Refresh PWA Cache'}
           style={{
             position: 'relative',
-            color: hasUpdate ? 'var(--color-primary)' : 'var(--text-secondary)',
+            color: '#ffffff',
           }}
         >
           <RotateCw
@@ -183,19 +175,10 @@ export const Header = ({
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                backgroundColor: 'var(--color-primary)',
+                backgroundColor: 'var(--color-accent)',
               }}
             />
           )}
-        </button>
-
-        {/* Dark / Light Mode Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="btn-icon"
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
 
         {/* Fullscreen Toggle */}
@@ -203,6 +186,7 @@ export const Header = ({
           onClick={toggleFullscreen}
           className="btn-icon"
           title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+          style={{ color: '#ffffff' }}
         >
           {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
         </button>

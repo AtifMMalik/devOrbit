@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Sidebar } from './Sidebar';
+import { ActivityBar } from './ActivityBar';
 import { Header } from './Header';
 import { ToastContainer } from '../common/ToastContainer';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -23,6 +24,15 @@ export const AppLayout = () => {
     return localStorage.getItem('devorbit_sidebar_collapsed') === 'true';
   });
 
+  const [activePanel, setActivePanel] = useState(() => {
+    return localStorage.getItem('devorbit_active_panel') || 'projects';
+  });
+
+  const handleSelectPanel = (panel) => {
+    setActivePanel(panel);
+    localStorage.setItem('devorbit_active_panel', panel);
+  };
+
   const [isMobile, setIsMobile] = useState(() => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   });
@@ -39,6 +49,18 @@ export const AppLayout = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [sidebarCollapsed]);
+
+  // Support opening extensions panel via custom event
+  useEffect(() => {
+    const handleToggleExt = () => {
+      setActivePanel('extensions');
+      setSidebarCollapsed(false);
+      localStorage.setItem('devorbit_active_panel', 'extensions');
+      localStorage.setItem('devorbit_sidebar_collapsed', 'false');
+    };
+    window.addEventListener('devorbit:toggle-extensions', handleToggleExt);
+    return () => window.removeEventListener('devorbit:toggle-extensions', handleToggleExt);
+  }, []);
 
   const handleResizeSidebar = (newWidth) => {
     setSidebarWidth(newWidth);
@@ -123,10 +145,19 @@ export const AppLayout = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%', position: 'relative' }}>
-      {/* Left Sidebar (Full or Thin) */}
+      {/* Activity Bar (VS Code-style thin sidebar - always visible) */}
+      <ActivityBar
+        activePanel={activePanel}
+        onSelectPanel={handleSelectPanel}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={handleToggleCollapse}
+      />
+
+      {/* Main Collapsible Sidebar (Projects Tree or Extensions Panel) */}
       <Sidebar
         width={sidebarWidth}
         collapsed={sidebarCollapsed}
+        activePanel={activePanel}
         onResize={handleResizeSidebar}
         onToggleCollapse={handleToggleCollapse}
         onAddProject={() => handleOpenNewProject(null)}

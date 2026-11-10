@@ -32,6 +32,8 @@ import { highlightText, cycleOnPageMatch } from '../utils/searchHighlight';
 import { formatSingleTaskToMarkdown } from '../utils/issueExporter';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
+import { useExtensions } from '../extensions/ExtensionContext';
+import { SketchboardCanvas } from '../extensions/sketchboard/SketchboardCanvas';
 
 const DRAFT_STORAGE_KEY = 'devorbit_task_draft';
 const QUICK_TAGS = ['feature', 'bug', 'hotfix', 'documentation', 'refactor', 'testing', 'ui/ux', 'api'];
@@ -52,6 +54,7 @@ export const CreateTaskPage = () => {
     setSearchKeyword,
   } = useWorkspace();
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const { isExtensionActive } = useExtensions();
 
   const editingTaskId = routeTaskId || location.state?.taskId || location.state?.task?.id;
   const existingTask = editingTaskId ? getTask(editingTaskId) : null;
@@ -79,6 +82,7 @@ export const CreateTaskPage = () => {
   const [projectId, setProjectId] = useState(defaultProjectId);
   const [title, setTitle] = useState(existingTask?.title || '');
   const [description, setDescription] = useState(existingTask?.description || '');
+  const [sketchUrl, setSketchUrl] = useState(existingTask?.sketch || '');
   const [taskPrompt, setTaskPrompt] = useState(existingTask?.taskPrompt || '');
   const [status, setStatus] = useState(initialStatus);
   const [priority, setPriority] = useState(existingTask?.priority || (initialIsHotfix ? 'urgent' : 'medium'));
@@ -126,6 +130,7 @@ export const CreateTaskPage = () => {
       setProjectId(pId);
       setTitle(tTitle);
       setDescription(tDesc);
+      setSketchUrl(existingTask.sketch || '');
       setTaskPrompt(tPrompt);
       setStatus(tStatus);
       setPriority(tPriority);
@@ -536,6 +541,7 @@ export const CreateTaskPage = () => {
       projectId,
       title: title.trim(),
       description: description.trim(),
+      sketch: sketchUrl,
       taskPrompt: taskPrompt.trim(),
       status,
       priority,
@@ -570,7 +576,7 @@ export const CreateTaskPage = () => {
       toastSuccess(`Created task "${title.trim()}"`);
       navigate(`/project/${projectId}/tasks`);
     }
-  }, [title, projectId, description, taskPrompt, status, priority, deadline, completionNote, isHotfix, tags, subtasks, isEditing, existingTask, updateTask, createTask, triggerConfetti, navigate, toastError, toastSuccess]);
+  }, [title, projectId, description, sketchUrl, taskPrompt, status, priority, deadline, completionNote, isHotfix, tags, subtasks, isEditing, existingTask, updateTask, createTask, triggerConfetti, navigate, toastError, toastSuccess]);
 
   // Support global Cmd + S shortcut to save task
   useEffect(() => {
@@ -938,6 +944,32 @@ export const CreateTaskPage = () => {
             highlight={searchKeyword}
           />
         </div>
+
+        {/* Whiteboard / Sketchboard Canvas (Sketchboard Extension) */}
+        {isExtensionActive && isExtensionActive('sketchboard') && (
+          <div
+            className="card"
+            style={{
+              padding: 'var(--space-4) var(--space-5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-2-5)',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <SketchboardCanvas
+              entityId={existingTask?.id || 'new_task'}
+              initialDataUrl={sketchUrl}
+              onSave={(dataUrl) => {
+                setSketchUrl(dataUrl);
+                toastSuccess('Task illustration saved');
+              }}
+              onClear={() => setSketchUrl('')}
+              title="Task Whiteboard & Sketchboard"
+              defaultOpen={true}
+            />
+          </div>
+        )}
 
         {/* Task Prompt Box - Requirement 5 & 8 */}
         <div

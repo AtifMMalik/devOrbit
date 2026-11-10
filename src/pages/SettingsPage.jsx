@@ -1,4 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Download,
   Upload,
@@ -9,9 +10,17 @@ import {
   HardDrive,
   Sliders,
   AlertTriangle,
+  Palette,
+  Blocks,
+  Check,
+  Sparkles,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useToast } from '../context/ToastContext';
+import { useExtensions } from '../extensions/ExtensionContext';
+import { ThemeIcon } from '../extensions/assets';
 import { exportWorkspaceJSON } from '../utils/storage';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
@@ -20,7 +29,15 @@ import { DataSyncProgressModal } from '../components/common/DataSyncProgressModa
 export const SettingsPage = () => {
   const { projects, tasks, notes, restoreWorkspaceData, resetWorkspace } = useWorkspace();
   const { toastSuccess, toastError, toastInfo } = useToast();
+  const { extensions, activeThemeId, enableExtension } = useExtensions();
   const fileInputRef = useRef(null);
+
+  const themeExtensions = extensions.filter((e) => e.type === 'theme' || e.category === 'Themes');
+
+  const handleOpenExtensionsPanel = () => {
+    window.dispatchEvent(new CustomEvent('devorbit:toggle-extensions'));
+    toastInfo('Opened Extensions sidebar panel');
+  };
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
@@ -356,6 +373,189 @@ export const SettingsPage = () => {
               <option value="18px">Large (18px)</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* Themes & UI Appearance (Hue & View Theme System as Extensions) */}
+      <div className="card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          <h3 style={{ fontSize: 'var(--text-base)', margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Palette size={18} style={{ color: 'var(--color-primary)' }} />
+            <span>Appearance & Themes (Hue & View Architecture)</span>
+          </h3>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Blocks}
+            onClick={handleOpenExtensionsPanel}
+          >
+            Manage Extensions
+          </Button>
+        </div>
+
+        <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          Themes in devOrbit are designed with the standardized 7-file Hue &amp; View structure (<code>variables.css</code>, <code>lightMode.css</code>, <code>darkMode.css</code>, <code>elements.css</code>, <code>components.css</code>, <code>theme.css</code>, <code>README.md</code>). Themes are packaged as modular extensions in <code>src/extensions/themes/</code> and apply dynamically across all UI components without requiring page reloads.
+        </p>
+
+        {/* Theme Cards Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-3)' }}>
+          {themeExtensions.map((theme) => {
+            const isActive = activeThemeId === theme.id;
+            const primaryColor = theme.config?.primaryColor || '#0084ff';
+            const accentColor = theme.config?.accentColor || '#38bdf8';
+            const hueColor = theme.config?.hueColor || theme.config?.primaryColor || '#090d16';
+
+            return (
+              <div
+                key={theme.id}
+                style={{
+                  padding: 'var(--space-4)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: isActive ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-3)',
+                  position: 'relative',
+                  transition: 'border-color var(--transition-fast)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2-5)' }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: 'var(--bg-surface-active)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ThemeIcon themeId={theme.id} size={24} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1-5)' }}>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+                          {theme.name}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          v{theme.version}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                        By {theme.author} • {theme.category}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isActive ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        fontSize: '11px',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        backgroundColor: 'var(--status-done-bg)',
+                        color: 'var(--status-done-text)',
+                        fontWeight: 'var(--font-weight-medium)',
+                      }}
+                    >
+                      <Check size={12} />
+                      Active
+                    </span>
+                  ) : null}
+                </div>
+
+                <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  {theme.description}
+                </p>
+
+                {/* Color Swatch Preview */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginTop: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Palette:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div
+                        style={{ width: 18, height: 18, borderRadius: 4, backgroundColor: primaryColor, border: '1px solid var(--border-default)' }}
+                        title={`Primary: ${primaryColor}`}
+                      />
+                      <div
+                        style={{ width: 18, height: 18, borderRadius: 4, backgroundColor: accentColor, border: '1px solid var(--border-default)' }}
+                        title={`Accent: ${accentColor}`}
+                      />
+                      <div
+                        style={{ width: 18, height: 18, borderRadius: 4, backgroundColor: hueColor, border: '1px solid var(--border-default)' }}
+                        title={`Hue background: ${hueColor}`}
+                      />
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/extensions/${theme.id}`}
+                    style={{ fontSize: '11px', color: 'var(--color-primary)', textDecoration: 'none' }}
+                  >
+                    Details →
+                  </Link>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 'var(--space-2)' }}>
+                  {isActive ? (
+                    <Button variant="secondary" size="sm" disabled style={{ opacity: 0.7 }}>
+                      Applied Theme
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={Palette}
+                      onClick={() => {
+                        enableExtension(theme.id);
+                        toastSuccess(`Applied theme "${theme.name}"`);
+                      }}
+                    >
+                      Apply Theme
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Extensions Ecosystem Summary */}
+        <div
+          style={{
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--bg-surface-active)',
+            border: '1px solid var(--border-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 'var(--space-2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Blocks size={16} style={{ color: 'var(--color-primary)' }} />
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+              Installed Extensions: <strong>{extensions.length}</strong> ({extensions.filter((e) => e.enabled).length} enabled)
+            </span>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleOpenExtensionsPanel}
+            style={{ fontSize: '11px', padding: '2px 8px' }}
+          >
+            Open Extensions Activity Bar &rarr;
+          </Button>
         </div>
       </div>
 
